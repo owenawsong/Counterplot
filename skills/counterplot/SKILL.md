@@ -1,6 +1,6 @@
 ---
 name: counterplot
-description: Build a portable interactive numerical explanation using Counterplot's validated models. Use for teaching gradient descent, loan amortization, ideal RC dynamics, illustrative SIR dynamics, or Bayesian test interpretation.
+description: Build offline interactive numerical explanations and parameter studies with Counterplot's validated models, including classification thresholds and labeled scores.
 ---
 
 # Counterplot
@@ -19,8 +19,9 @@ Use the `counterplot` command if installed. In a source checkout, use `node bin/
 4. Run `counterplot validate experiment.json --json`. Repair invalid fields and relationships. Keep uncertainty or undefined events visible.
 5. Run `counterplot export experiment.json --format json --out results.json`. Inspect actual metrics and selected rows. Check a known limiting case: zero-interest repayment, RC equilibrium, quadratic stability boundary, no-transmission SIR, or impossible Bayes conditioning.
 6. State conclusions only for the engine's actual model and settings. Do not invent statistical uncertainty, real-world population baselines or causal claims.
-7. Run `counterplot build experiment.json --out experiment.html`. Open it in the user's requested browser, or use the available browser skill. Check a scenario, pin a baseline, confirm plotted units and read the method section. If browser access is unavailable, report that limitation.
-8. Deliver the HTML, original spec and optional raw result JSON. The HTML is standalone and works without the checkout. Explain the important assumption and the comparison readers should try first.
+7. For an interaction or sensitivity question, use `counterplot sweep experiment.json --config study.json --out grid.json` or `counterplot sensitivity experiment.json --out sensitivity.json`. Read `docs/ANALYSIS.md` for configuration. Inspect exact coordinates, undefined/invalid points, perturbation sizes and captured fixed inputs. A grid optimum is only the best sampled point; local slopes depend on units and perturbations.
+8. Run `counterplot build experiment.json --out experiment.html`. Open it in the user's requested browser, or use the available browser skill. Check a scenario, pin a baseline, confirm plotted units and read the method section. If browser access is unavailable, report that limitation.
+9. Deliver the HTML, original spec and optional raw result/study JSON. The HTML is standalone and works without the checkout. Explain the important assumption and the comparison readers should try first.
 
 ## Example tasks
 
@@ -38,11 +39,13 @@ Use `bayes` with a hypothetical population and stated sensitivity/specificity. V
 
 ## Authoring constraints
 
-- Top-level keys: schemaVersion, model, title, description, parameters, optional scenarios.
+For classification, supply real `data.labels` (0/1) and `data.scores` (0–1), with 2–2,000 matching observations, or clearly label the authored example as demonstration data. Scores need not be calibrated probabilities. The browser accepts local numeric `label,score` CSV. Retain one-class/zero-denominator metrics as undefined. Explain whether an outcome uses a decision threshold or a full ranking; ROC AUC and average precision do not change merely by moving the threshold.
+
+- Top-level keys: schemaVersion, model, title, description, parameters, optional scenarios; classification also requires data.
 - Full parameters are required; scenario parameters are partial.
 - Input units are fixed. Use `inspect` rather than guessing scale or bounds.
 - Titles and descriptions are escaped plain text.
-- No custom HTML, executable formulas, external data or arbitrary renderer plugins.
+- No custom HTML, executable formulas, remote assets or arbitrary renderer plugins. Classification accepts validated numeric data embedded in the spec.
 - Keep written framing accurate if readers change parameters. Computed explanation paragraphs adapt automatically.
 - `--force` explicitly replaces an output. Choose an unused filename unless replacing it is intended.
 

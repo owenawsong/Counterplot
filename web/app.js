@@ -1,7 +1,7 @@
 /* Bundled behind the pure engine. All spec content is escaped, never executed. */
 let spec = validateSpec(INITIAL_SPEC),
   params = { ...spec.parameters },
-  baseline = null,
+  baseline = INITIAL_BASELINE,
   result = evaluate(spec),
   view = 'primary',
   cursor = result.rows.length - 1,
@@ -12,13 +12,18 @@ const esc = (value) =>
     /[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
   );
-const number = (v, d = 2) =>
-  v === null ? 'Undefined' : Number(v).toLocaleString('en-US', { maximumFractionDigits: d });
+const number = (v, d = 2) => {
+  if (v === null || !Number.isFinite(v)) return 'Undefined';
+  const magnitude = Math.abs(v);
+  return magnitude !== 0 && (magnitude < 10 ** -d || magnitude >= 1e8)
+    ? v.toExponential(3)
+    : v.toLocaleString('en-US', { maximumFractionDigits: d });
+};
 function shell() {
   stop();
   const model = MODELS[spec.model];
   $('app').innerHTML =
-    `<section class="page-header"><div><div class="eyebrow">${esc(model.field)} / ${esc(model.label)}</div><h1>${esc(spec.title)}</h1><p>${esc(spec.description)}</p></div><div><div class="tools"><button id="pin" class="primary">Pin baseline</button><button id="edit" class="quiet">Edit experiment</button></div><div id="baseline-status" class="baseline-status"></div></div></section><div class="workbench"><aside class="controls" aria-label="Experiment parameters"><div class="control-header"><h2 class="section-label">01 / Change the inputs</h2><button id="reset" class="quiet">Reset</button></div><div id="controls">${Object.entries(
+    `<section class="page-header"><div><div class="eyebrow">${esc(model.field)} / ${esc(model.label)}</div><h1>${esc(spec.title)}</h1><p>${esc(spec.description)}</p></div><div><div class="tools"><button id="pin" class="primary">Pin baseline</button><button id="save-html" class="primary">Download interactive file</button><button id="edit" class="quiet">Edit experiment</button></div><div id="baseline-status" class="baseline-status"></div></div></section><div class="workbench"><aside class="controls" aria-label="Experiment parameters"><div class="control-header"><h2 class="section-label">01 / Change the inputs</h2><button id="reset" class="quiet">Reset</button></div><div id="controls">${Object.entries(
       model.controls,
     )
       .map(
@@ -27,9 +32,10 @@ function shell() {
       )
       .join(
         '',
-      )}</div>${spec.scenarios?.length ? `<div class="scenarios"><h3 class="section-label">Try a scenario</h3>${spec.scenarios.map((s, i) => `<button class="quiet scenario" data-scenario="${i}">${esc(s.name)} ↗</button>`).join('')}</div>` : ''}<p class="comparison-help">Pin the current inputs, then change one thing. Dashed lines show that baseline.</p><p id="status" class="status" role="status" aria-live="polite"></p></aside><section class="canvas" aria-label="Computed result"><div class="view-head"><div><div class="section-label">02 / Follow the result</div><h2 id="chart-title">${esc(model.label)}</h2></div><div class="switcher"><button id="primary-view" aria-pressed="true">${spec.model === 'descent' ? 'Objective' : 'Chart'}</button>${spec.model === 'descent' ? '<button id="path-view" aria-pressed="false">Path through x, y</button>' : ''}<button id="scale" aria-pressed="false" hidden>Log scale</button></div></div><div id="legend" class="legend"></div><div class="chart-wrap" id="chart"></div><p id="chart-note" class="chart-note"></p><div class="transport" id="transport"><button id="play" aria-label="Play calculation steps">Play</button><input id="scrub" type="range" min="0" max="${result.rows.length - 1}" value="${cursor}" step="1" aria-label="Inspect calculation step"><output id="step-label" for="scrub"></output></div><div id="metrics" class="metrics"></div><div id="warnings"></div><div id="reading" class="reading"></div></section></div><section class="method"><div><div class="section-label">03 / Look under the surface</div><h2>How this is calculated</h2></div><div><div class="formula">${esc(model.formula)}</div><ul>${model.assumptions.map((s) => `<li>${esc(s)}</li>`).join('')}</ul><div class="references">${model.references.map((r) => `<a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">${esc(r.label)} ↗</a>`).join('')}</div><details><summary>Inspect the numerical table <span id="row-count"></span></summary><div id="table" class="table-wrap"></div></details><div class="export-bar"><button id="csv">Download CSV</button><button id="json">Download results</button><button id="save-spec">Save experiment</button><button id="svg">Export chart SVG</button><button id="print">Print / PDF</button></div><p class="chart-note">Exports contain full computed results. Pinning and playback only change the view. Saved experiments use your current inputs.</p></div></section><dialog id="editor"><h2>Make it your experiment.</h2><p>Edit the title, inputs and named scenarios. Model equations are fixed and versioned.</p><label class="section-label" for="spec-text">Experiment JSON · schema version 1</label><textarea id="spec-text" spellcheck="false"></textarea><pre class="error" id="spec-error" role="alert" hidden></pre><div class="actions"><button id="cancel" class="quiet">Cancel</button><button id="apply" class="primary">Validate & apply</button></div></dialog>`;
+      )}</div>${spec.scenarios?.length ? `<div class="scenarios"><h3 class="section-label">Try a scenario</h3>${spec.scenarios.map((s, i) => `<button class="quiet scenario" data-scenario="${i}">${esc(s.name)} ↗</button>`).join('')}</div>` : ''}<p class="comparison-help">Pin the current inputs, then change one thing. Dashed lines show that baseline.</p><p id="status" class="status" role="status" aria-live="polite"></p></aside><section class="canvas" aria-label="Computed result"><div class="view-head"><div><div class="section-label">02 / Follow the result</div><h2 id="chart-title">${esc(model.label)}</h2></div><div class="switcher"><button id="primary-view" aria-pressed="true">${spec.model === 'descent' ? 'Objective' : spec.model === 'classification' ? 'ROC curve' : 'Chart'}</button>${spec.model === 'descent' ? '<button id="path-view" aria-pressed="false">Path through x, y</button>' : spec.model === 'classification' ? '<button id="path-view" aria-pressed="false">Precision / recall</button>' : ''}<button id="scale" aria-pressed="false" hidden>Log scale</button></div></div><div id="legend" class="legend"></div><div class="chart-wrap" id="chart"></div><p id="chart-note" class="chart-note"></p><div class="transport" id="transport"><button id="play" aria-label="Play calculation steps">Play</button><input id="scrub" type="range" min="0" max="${result.rows.length - 1}" value="${cursor}" step="1" aria-label="Inspect calculation step"><output id="step-label" for="scrub"></output></div><div id="metrics" class="metrics"></div><div id="warnings"></div><div id="reading" class="reading"></div></section></div><section class="study-panel" id="study-panel"><div class="study-heading"><div><div class="section-label">Parameter study</div><h2>Find out which settings matter.</h2><p>Sample a range, compare the outcomes and apply a computed point to the experiment.</p></div><span class="offline-label">Calculated locally · bounded work</span></div><div class="study-workbench"><aside class="study-controls"><label>Outcome<select id="study-metric"></select></label><div class="axis-heading">First parameter</div><label>Parameter<select id="study-axis"></select></label><div class="bounds"><label>From<input id="study-min" type="number" step="any"></label><label>To<input id="study-max" type="number" step="any"></label><label>Samples<input id="study-points" type="number" min="2" max="201" value="21"></label></div><label>Second parameter<select id="study-axis2"></select></label><div class="bounds" id="second-bounds" hidden><label>From<input id="study-min2" type="number" step="any"></label><label>To<input id="study-max2" type="number" step="any"></label><label>Samples<input id="study-points2" type="number" min="2" max="201" value="11"></label></div><label>Heatmap color<select id="study-color"><option value="auto">Automatic</option><option value="linear">Linear</option><option value="log">Signed log scale</option></select></label><label>Grid objective<select id="study-direction"><option value="min">Lowest sampled outcome</option><option value="max">Highest sampled outcome</option></select></label><button id="run-study" class="primary">Run parameter study</button><button id="run-sensitivity" class="quiet">Measure local sensitivity</button><p class="hint">Up to 625 grid cells, with a separate computation budget. Undefined and invalid points remain visible.</p></aside><div class="study-canvas"><div id="study-status" role="status" aria-live="polite">Choose an outcome and a range. Your current inputs stay fixed for the other parameters.</div><div id="study-chart"></div><div id="study-summary"></div><div id="sensitivity-results"></div><div class="study-actions"><button id="apply-best" class="quiet" hidden>Apply best sampled point</button><button id="export-study" class="quiet" hidden>Export study JSON</button><button id="export-study-csv" class="quiet" hidden>Export grid CSV</button></div><details id="study-table-wrap" hidden><summary>Inspect sampled points</summary><div class="table-wrap" id="study-table"></div></details></div></div></section><section class="dataset-panel" id="dataset-panel" hidden><div><div class="section-label">Your data / binary classification</div><h2>What does the threshold actually change?</h2><p id="dataset-source"></p><div id="confusion-matrix"></div></div><div><label for="data-csv">Labeled scores · CSV columns label,score</label><textarea id="data-csv" spellcheck="false"></textarea><div class="tools"><button id="apply-data" class="primary">Validate and use data</button><label class="file-import">Import CSV<input id="import-data" type="file" accept=".csv,text/csv"></label></div><p class="hint">2–2,000 rows. Labels are 0 or 1; scores are finite values between 0 and 1. Data stays inside this document; no upload or model service.</p><p id="data-error" role="alert"></p></div></section><section class="method"><div><div class="section-label">03 / Look under the surface</div><h2>How this is calculated</h2></div><div><div class="formula">${esc(model.formula)}</div><ul>${model.assumptions.map((s) => `<li>${esc(s)}</li>`).join('')}</ul><div class="references">${model.references.map((r) => `<a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">${esc(r.label)} ↗</a>`).join('')}</div><details><summary>Inspect the numerical table <span id="row-count"></span></summary><div id="table" class="table-wrap"></div></details><div class="export-bar"><button id="csv">Download CSV</button><button id="json">Download results</button><button id="save-spec">Save experiment</button><button id="svg">Export chart SVG</button><button id="print">Print / PDF</button></div><p class="chart-note">Exports contain full computed results. Pinning and playback only change the view. Saved experiments use your current inputs.</p></div></section><dialog id="editor"><h2>Make it your experiment.</h2><p>Edit the title, inputs and named scenarios. Model equations are fixed and versioned.</p><label class="section-label" for="spec-text">Experiment JSON · schema version 1</label><textarea id="spec-text" spellcheck="false"></textarea><pre class="error" id="spec-error" role="alert" hidden></pre><div class="actions"><button id="cancel" class="quiet">Cancel</button><button id="apply" class="primary">Validate & apply</button></div></dialog>`;
   bind();
   update();
+  bindStudy();
 }
 let logScale = false;
 function stop() {
@@ -69,13 +75,14 @@ function update() {
   $('pin').textContent = baseline ? 'Replace baseline' : 'Pin baseline';
   $('scrub').max = result.rows.length - 1;
   $('scrub').value = cursor;
-  $('transport').hidden = spec.model === 'bayes';
+  $('transport').hidden = ['bayes', 'classification'].includes(spec.model);
   $('row-count').textContent = `· ${result.rows.length} rows`;
   $('table').innerHTML =
     `<table><caption class="section-label">${esc(MODELS[spec.model].label)} · full calculation</caption><thead><tr>${result.columns.map((c) => `<th scope="col">${esc(c)}</th>`).join('')}</tr></thead><tbody>${result.rows.map((r) => `<tr>${result.columns.map((c) => `<td>${typeof r[c] === 'number' ? number(r[c], 6) : esc(r[c])}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
   $('scale').hidden = spec.model !== 'descent' || view !== 'primary';
   draw(prior);
   status('');
+  renderDataset();
 }
 function status(message) {
   $('status').textContent = message;
@@ -86,10 +93,9 @@ function draw(prior = baseline ? evaluate(spec, baseline) : null) {
   const stepFraction = cursor / Math.max(1, result.rows.length - 1);
   const visible = chart.series.map((s) => ({
     ...s,
-    points:
-      spec.model === 'bayes'
-        ? s.points
-        : s.points.slice(0, Math.max(1, Math.floor(stepFraction * (s.points.length - 1)) + 1)),
+    points: ['bayes', 'classification'].includes(spec.model)
+      ? s.points
+      : s.points.slice(0, Math.max(1, Math.floor(stepFraction * (s.points.length - 1)) + 1)),
   }));
   const scaleLog = logScale && view === 'primary' && spec.model === 'descent';
   $('chart').innerHTML = plotSvg(chart, visible, baselineChart, scaleLog);
@@ -108,11 +114,13 @@ function draw(prior = baseline ? evaluate(spec, baseline) : null) {
           ? `${number(row.seconds, 3)} s`
           : `Day ${row.day}`;
   $('chart-note').textContent =
-    spec.model === 'bayes'
-      ? `The curve varies prevalence while sensitivity and specificity stay fixed. The marked point is your selected prevalence.`
-      : view === 'path'
-        ? `Dots follow successive updates. Axis limits include the full trace; change the iteration count to inspect a shorter path.`
-        : `Shown through ${$('step-label').textContent.toLowerCase()}. Metrics below use the complete calculation.${scaleLog ? ' Zero values are omitted on a logarithmic axis.' : ''}`;
+    spec.model === 'classification'
+      ? 'Curve points group equal scores; move the threshold to inspect its operating point. Metrics use the complete labeled dataset.'
+      : spec.model === 'bayes'
+        ? `The curve varies prevalence while sensitivity and specificity stay fixed. The marked point is your selected prevalence.`
+        : view === 'path'
+          ? `Dots follow successive updates. Axis limits include the full trace; change the iteration count to inspect a shorter path.`
+          : `Shown through ${$('step-label').textContent.toLowerCase()}. Metrics below use the complete calculation.${scaleLog ? ' Zero values are omitted on a logarithmic axis.' : ''}`;
 }
 function plotSvg(chart, visible, baselineChart, logarithmic = false) {
   const W = Math.max(320, Math.min(860, $('chart').clientWidth)),
@@ -126,11 +134,11 @@ function plotSvg(chart, visible, baselineChart, logarithmic = false) {
   const full = [...chart.series, ...(baselineChart?.series || [])];
   const all = full.flatMap((s) => s.points);
   const valid = all.filter(
-    (p) => p.y !== null && Number.isFinite(p.y) && (!logarithmic || p.y > 0),
+    (p) => Number.isFinite(p.x) && Number.isFinite(p.y) && (!logarithmic || p.y > 0),
   );
   const transform = (y) => (logarithmic ? Math.log10(y) : y);
-  let xmin = Math.min(0, ...all.map((p) => p.x)),
-    xmax = Math.max(0, ...all.map((p) => p.x)),
+  let xmin = Math.min(0, ...all.filter((p) => Number.isFinite(p.x)).map((p) => p.x)),
+    xmax = Math.max(0, ...all.filter((p) => Number.isFinite(p.x)).map((p) => p.x)),
     ymin = Math.min(...valid.map((p) => transform(p.y))),
     ymax = Math.max(...valid.map((p) => transform(p.y)));
   if (!valid.length) {
@@ -163,14 +171,19 @@ function plotSvg(chart, visible, baselineChart, logarithmic = false) {
     let open = false;
     return points
       .map((p) => {
-        if (p.y === null || !Number.isFinite(p.y) || (logarithmic && p.y <= 0)) {
+        if (!Number.isFinite(p.x) || !Number.isFinite(p.y) || (logarithmic && p.y <= 0)) {
           open = false;
           return '';
         }
         const q = `${sx(p.x).toFixed(2)},${sy(p.y).toFixed(2)}`,
           prefix = open ? 'L' : 'M';
+        if (open && spec.model === 'classification' && view === 'path')
+          return `V${sy(p.y).toFixed(2)}H${sx(p.x).toFixed(2)}`;
+        const initialStep = !open && spec.model === 'classification' && view === 'path';
         open = true;
-        return prefix + q;
+        return initialStep
+          ? `M${sx(0).toFixed(2)},${sy(p.y).toFixed(2)}H${sx(p.x).toFixed(2)}`
+          : prefix + q;
       })
       .join(' ');
   };
@@ -186,7 +199,7 @@ function plotSvg(chart, visible, baselineChart, logarithmic = false) {
     .join('');
   const paths = visible.map((s, i) => `<path class="trace s${i}" d="${path(s.points)}"/>`).join('');
   const contours =
-    view === 'path'
+    view === 'path' && spec.model === 'descent'
       ? [0.01, 0.04, 0.12, 0.3, 0.6, 1]
           .map((f) => {
             const loss = Math.min(1e12, Math.max(1, result.rows[0].loss)) * f;
@@ -198,10 +211,13 @@ function plotSvg(chart, visible, baselineChart, logarithmic = false) {
       : '';
   const points = visible
     .map((s) => s.points.at(-1))
-    .filter((p) => p && p.y !== null && (!logarithmic || p.y > 0));
-  const marker = chart.marker ? chart.marker : points[0];
+    .filter((p) => p && Number.isFinite(p.x) && Number.isFinite(p.y) && (!logarithmic || p.y > 0));
+  const marker = chart.marker ?? (spec.model === 'classification' ? null : points[0]);
   const mark =
-    marker && marker.y !== null && (!logarithmic || marker.y > 0)
+    marker &&
+    Number.isFinite(marker.x) &&
+    Number.isFinite(marker.y) &&
+    (!logarithmic || marker.y > 0)
       ? `<line class="cursor" x1="${sx(marker.x)}" y1="${T}" x2="${sx(marker.x)}" y2="${T + h}"/><circle class="point" cx="${sx(marker.x)}" cy="${sy(marker.y)}" r="5"/>`
       : '';
   const empty = !valid.length
@@ -236,8 +252,8 @@ function download(name, content, type) {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 3000);
 }
-async function browserResultDocument(effectiveParameters = params) {
-  const clean = validateSpec({ ...spec, parameters: { ...effectiveParameters } });
+async function browserResultDocument(effectiveParameters = params, sourceSpec = spec) {
+  const clean = validateSpec({ ...sourceSpec, parameters: { ...effectiveParameters } });
   if (!globalThis.crypto?.subtle)
     throw new Error(
       'Verified JSON export requires Web Crypto in a secure context. Open the standalone file or serve it on localhost.',
@@ -323,12 +339,14 @@ function bind() {
     download(`counterplot-${spec.model}.csv`, csv(result), 'text/csv;charset=utf-8');
   $('json').onclick = async () => {
     const button = $('json');
+    const snapshot = structuredClone({ spec, params, baseline });
     button.disabled = true;
     try {
-      const envelope = await browserResultDocument();
-      if (baseline) envelope.baseline = await browserResultDocument(baseline);
+      const envelope = await browserResultDocument(snapshot.params, snapshot.spec);
+      if (snapshot.baseline)
+        envelope.baseline = await browserResultDocument(snapshot.baseline, snapshot.spec);
       download(
-        `counterplot-${spec.model}-results.json`,
+        `counterplot-${snapshot.spec.model}-results.json`,
         JSON.stringify(envelope, null, 2) + '\n',
         'application/json',
       );
@@ -358,6 +376,7 @@ function bind() {
       'image/svg+xml',
     );
   };
+  $('save-html').onclick = saveInteractiveHtml;
   $('print').onclick = () => window.print();
   $('edit').onclick = () => {
     $('spec-text').value = JSON.stringify({ ...spec, parameters: params }, null, 2);

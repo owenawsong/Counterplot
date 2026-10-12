@@ -19,8 +19,39 @@ export function experimentSchema() {
       return {
         type: 'object',
         additionalProperties: false,
-        required: ['schemaVersion', 'model', 'title', 'description', 'parameters'],
+        required: [
+          'schemaVersion',
+          'model',
+          'title',
+          'description',
+          'parameters',
+          ...(key === 'classification' ? ['data'] : []),
+        ],
         properties: {
+          ...(key === 'classification'
+            ? {
+                data: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['labels', 'scores'],
+                  properties: {
+                    labels: {
+                      type: 'array',
+                      minItems: 2,
+                      maxItems: 2000,
+                      items: { type: 'integer', enum: [0, 1] },
+                    },
+                    scores: {
+                      type: 'array',
+                      minItems: 2,
+                      maxItems: 2000,
+                      items: { type: 'number', minimum: 0, maximum: 1 },
+                    },
+                    source: { type: 'string', minLength: 1, maxLength: 500, pattern: '\\S' },
+                  },
+                },
+              }
+            : {}),
           schemaVersion: { const: 1 },
           model: { const: key },
           title: { type: 'string', minLength: 1, maxLength: 140, pattern: '\\S' },

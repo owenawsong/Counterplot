@@ -1,29 +1,39 @@
-<p align="center"><img src="assets/banner.svg" width="100%" alt="Counterplot — Move one thing. Understand what changes."></p>
+# Counterplot
 
-<p align="center"><strong>Interactive explanations you can calculate, inspect, and send as one file.</strong></p>
-<p align="center">Node 20+ · zero runtime dependencies · offline HTML · MIT</p>
+### A calculation you can change—and send as one file.
 
-Your learning rate looks reasonable. Double it: the optimizer escapes. A hypothetical test is 99% specific. In a rare-condition population, nearly half its positive results are false positives. An extra monthly payment changes the entire repayment curve.
+**Explore the inputs. Map the outcomes. Keep the evidence.**
 
-**Counterplot makes these differences something you can explore.** Give it a small JSON experiment. It builds a complete interactive document: inputs, plots, comparisons, computed explanations, numerical tables and exports. Open the file in a browser—even without a server or internet connection.
+Counterplot turns a small JSON experiment into a complete interactive document: parameter controls, computed plots, baseline comparisons, local sensitivity, one- and two-parameter studies, numerical tables and reproducible exports. The document runs offline. The browser and CLI use the same numerical engine.
 
-The same engine calculates the CLI results and the browser plots. Coding agents choose a supported model and write the framing; Counterplot calculates the numbers.
+**Node 20+ to build · zero runtime dependencies · offline HTML · MIT**
 
-<p align="center"><img src="assets/experiment.png" width="100%" alt="Counterplot experiment with controls, a computed gradient-descent path, baseline comparison and explanations"></p>
+[Start here](#your-first-experiment) · [Models](docs/MODELS.md) · [Parameter studies](docs/ANALYSIS.md) · [CLI](docs/CLI.md) · [Agent workflow](docs/AGENTS.md)
 
-## Make your first experiment
+```text
+    JSON SPEC                     INTERACTIVE FILE
+    inputs + scenarios ──────► controls + plots + comparisons
+    labeled scores             parameter grid + local sensitivity
+                               exact values + methods + exports
+                                          │
+                                          ▼
+                            browser · offline · static hosting
+```
+
+A learning rate can look fine at one curvature and fail at another. A classifier can rank examples well and still use a poor threshold. An extra loan payment changes interest and payoff time together. Counterplot lets a reader inspect those relationships and carry the calculation away.
+
+## Your first experiment
 
 ```bash
 git clone https://github.com/owenawsong/Counterplot.git
 cd Counterplot
 node bin/counterplot.js init descent --out experiment.json
-node bin/counterplot.js validate experiment.json
 node bin/counterplot.js build experiment.json --out experiment.html
 ```
 
-**Open `experiment.html` in your browser.** No installation, API key, account or bundler required. Node is only needed to build it; the exported document runs independently.
+**Open `experiment.html`.** No installation, account, API key, server or bundler is needed. Node builds the document; the exported document runs independently in a modern browser.
 
-For the complete example gallery:
+For the six-example gallery:
 
 ```bash
 npm run build
@@ -31,96 +41,119 @@ npm start
 # http://127.0.0.1:18872/
 ```
 
-## Change an assumption. Keep the evidence.
+## Go beyond a slider
 
-- **Pin a baseline**, then change an input. Dashed curves and numerical deltas show the comparison.
-- **Follow a calculation** with playback and a step scrubber. See the full result and the individual updates.
-- **Try named scenarios:** a stable optimizer, the stability boundary, a diverging trace; early or late intervention; a rarer tested population.
-- **Inspect the method:** equations, units, assumptions and reference links stay beside the experiment.
-- **Keep the result:** CSV, full result JSON, edited experiment JSON, vector chart SVG and browser print/PDF.
-- **Make it yours:** edit the JSON inside the document. Validation catches unsupported fields and invalid parameters before they change the calculation.
+| Question | Tool |
+| --- | --- |
+| What changed from my starting point? | Pin a baseline; inspect overlays and numerical deltas |
+| Where does this setting work? | Sweep one parameter and inspect sampled outcomes |
+| How do two assumptions interact? | Run a two-parameter grid and select a heatmap cell |
+| Which small changes matter here? | Measure local sensitivity with explicit perturbations |
+| What does the calculation actually do? | Inspect steps, equations, units and raw rows |
+| Can somebody reproduce this? | Export the spec, result envelope, study grid or complete interactive HTML |
 
-## Five working model families
+<p><img src="assets/study-v2.png" width="100%" alt="Actual Counterplot workspace calculating 231 learning-rate and curvature combinations, with selectable heatmap cells, explicit color scale and study exports."></p>
 
-| Model | What you can test | Calculation |
-| --- | --- | --- |
-| `descent` | Learning rate, curvature, start and convergence | Exact gradient updates on a 2D positive quadratic |
-| `loan` | Term, nominal rate and extra payments | Monthly amortization, capped final payment |
-| `circuit` | Resistance, capacitance and charging direction | Analytical ideal RC step response |
-| `epidemic` | Transmission, recovery and intervention timing | SIR equations, fourth-order Runge–Kutta |
-| `bayes` | Prevalence, sensitivity and specificity | Expected contingency counts and Bayes’ theorem |
+Studies run in a local background worker so the interface remains usable. They capture their fixed inputs and report invalid or undefined points explicitly. Applying a point restores the captured inputs with that point's coordinates. Keyboard users can move between points with arrow keys and apply with Enter.
 
-These are deliberately bounded teaching models. A quadratic is not a neural network, an SIR example is not an epidemic forecast, and a loan scenario is not a lender quote. [Equations, verification and limits →](docs/MODELS.md)
+A “best sampled point” is the best point in your grid, not a proof of a global optimum. Sensitivity is local and depends on perturbation size and units. [Methods and limits →](docs/ANALYSIS.md)
 
-## Small spec. Complete artifact.
+## Bring your own classifier scores
 
-```json
-{
-  "schemaVersion": 1,
-  "model": "bayes",
-  "title": "A positive result is only half the story.",
-  "description": "Change prevalence and count both sources of positive results.",
-  "parameters": {
-    "prevalence": 1,
-    "sensitivity": 95,
-    "specificity": 99,
-    "population": 10000
-  },
-  "scenarios": [
-    {"name": "Ten times rarer", "parameters": {"prevalence": 0.1}}
-  ]
-}
+The classification workspace accepts a local numeric CSV:
+
+```csv
+label,score
+1,0.91
+0,0.72
+1,0.63
+0,0.18
 ```
 
-Titles are plain text. Model equations are fixed in source. Specs cannot run JavaScript, supply remote assets or overwrite the model’s units. Unknown fields, out-of-range values and invalid cross-parameter relationships are errors. [Spec reference →](docs/SPEC.md)
+Change the decision threshold and inspect the **confusion matrix, precision, recall, F1, ROC curve, precision–recall curve, ROC AUC and average precision**. Sweep the threshold against an outcome you choose. Tied scores are grouped; zero denominators stay undefined; average precision uses its stepwise definition.
 
-## Give your agent a numerical workshop
+Labels must be 0/1 and scores between 0 and 1, with 2–2,000 observations. Scores need not be calibrated probabilities. The included dataset is **authored demonstration data**. Your imported data is processed locally and embedded in any experiment you save; nothing is uploaded.
 
-Point your coding agent at [the included skill](skills/counterplot/SKILL.md). It can inspect available models, write a spec, run validation, export exact values and build a document—without guessing chart data or writing an ad hoc simulator.
+## Six bounded model families
 
-> “Use Counterplot to explain why this quadratic’s learning rate oscillates. Include convergent, boundary and divergent scenarios. Check the actual results, then build a portable HTML explanation.”
+| Model | Inputs and questions | Calculation |
+| --- | --- | --- |
+| `classification` | Threshold and your labeled scores | Exact counts, grouped ROC/PR, rank AUC and average precision |
+| `descent` | Step size, curvature, start, iterations | Gradient updates on a 2D positive quadratic |
+| `loan` | Rate, term, principal and extra payments | Monthly amortization with capped final payment |
+| `circuit` | Resistance, capacitance, voltages and direction | Analytical ideal RC step response |
+| `epidemic` | Transmission, recovery and intervention timing | Illustrative SIR equations using fourth-order Runge–Kutta |
+| `bayes` | Prevalence, sensitivity and specificity | Expected contingency counts and Bayes' theorem |
 
-There is no hosted AI service or model dependency. The skill is readable Markdown with executable CLI steps; install it using your assistant’s normal skill mechanism, or include it directly in the task context. [Agent workflow →](docs/AGENTS.md)
+Each family declares its equations, units, bounds, assumptions and references. These are teaching and inspection models; applying them to real decisions requires the relevant domain assumptions and validation. [Model verification →](docs/MODELS.md)
 
-## Scripts, exports and embedding
+## Repeat a study from the CLI
+
+`examples/study-descent.json` varies learning rate and y-curvature, then selects the lowest sampled final objective:
 
 ```bash
-node bin/counterplot.js inspect circuit --json
-node bin/counterplot.js export examples/circuit.json --format csv --out circuit.csv
-node bin/counterplot.js export examples/circuit.json --format json --out circuit-results.json
-node bin/counterplot.js compare before.json after.json --out comparison.json
+node bin/counterplot.js sweep examples/descent.json \
+  --config examples/study-descent.json --out grid.json
+
+node bin/counterplot.js sensitivity examples/descent.json --out sensitivity.json
 ```
 
-Result JSON includes the engine version, normalized engine-source SHA-256, exact spec, canonical spec SHA-256 and computed rows. Browser and CLI share the same provenance schema and fingerprints; a pinned baseline adds its own envelope. Raw numerical rows can vary at the last floating-point digits across JavaScript runtimes. Builds are deterministic for the same spec and engine source. `compare` requires the same model family; it does not assert that a changed scenario is a controlled causal experiment.
+The report retains exact coordinates, statuses, warnings, objective, normalized spec and hashes of the numerical and analysis source. Browser exports use the same envelope. Grid exports also include CSV.
 
-Use the engine directly in Node or an existing frontend:
+Use the pure engine and analysis functions in your own code:
 
 ```js
-import {createSpec, evaluate} from './src/engine.js';
-const spec = createSpec('circuit');
-const result = evaluate(spec, {resistance: 20});
-console.log(result.metrics, result.rows);
+import { createSpec, evaluate } from './src/engine.js';
+import { sweep } from './src/analysis.js';
+
+const spec = createSpec('descent');
+const study = sweep(spec, {
+  axes: [{ parameter: 'rate', min: 0.02, max: 0.3, points: 29 }],
+  metrics: ['final-objective'],
+  objective: { metric: 'final-objective', direction: 'min' }
+});
+console.log(study.best, evaluate(spec).metrics);
 ```
 
-The package exports the engine at its root and the Node HTML builder at `counterplot/render`. The renderer is Node-only; the pure engine uses no Node APIs. [CLI reference →](docs/CLI.md)
+Installed packages export the engine at `counterplot`, analysis at `counterplot/analysis`, and the Node HTML builder at `counterplot/render`. TypeScript declarations cover model parameters and study reports. [CLI and API reference →](docs/CLI.md)
 
-## What is verified?
+## A numerical workshop for coding agents
 
-Tests check analytic answers, numerical invariants and failure cases: optimizer recurrence and stability; payment/principal conservation; RC unit conversions; SIR population and final-size invariants; Bayes denominators and undefined events. Integration tests check the CLI, portable output, CSP hashes, invalid specs and local server boundaries.
+Give your agent [the included skill](skills/counterplot/SKILL.md). It can inspect model contracts, author a spec, validate it, calculate a parameter study and build a document with actual values.
+
+> Use Counterplot to show how learning rate and curvature interact. Include the stability boundary, run a bounded grid, inspect invalid points and export an interactive explanation with its assumptions visible.
+
+Specs contain data and plain-text framing. They cannot execute formulas, inject HTML or fetch remote assets. The engine owns the calculation; the agent authors the explanation. Unknown fields, invalid parameters and unsupported relationships are rejected.
+
+## Save the work, not just a picture
+
+- **Interactive HTML:** current inputs and a pinned baseline, with the engine and worker embedded.
+- **Experiment JSON:** validated source inputs and named scenarios.
+- **Result JSON:** full values, inputs, canonical spec hash and engine-source fingerprint.
+- **Study JSON/CSV:** sampled coordinates, outcomes, warnings and fixed inputs.
+- **Chart SVG and print/PDF:** presentation exports alongside inspectable numbers.
+
+Documents make no external runtime requests and include a hash-based Content Security Policy. No telemetry, hosted AI service or remote model dependency. The development server binds only to loopback; built files work with ordinary static hosting.
+
+## Verification
 
 ```bash
-npm test
 npm ci --ignore-scripts
+npm test
 npm run typecheck
 npm run build
 npm run check
 npm pack
 ```
 
-CI runs on Windows and Linux with Node 20 and 24. TypeScript declarations include model-specific parameter checks. The only development dependency is the pinned TypeScript compiler; building and running the toolkit needs none. The interface supports keyboard controls, reduced motion and a mobile layout. There is no telemetry or external runtime fetch. **v0.1 is a focused experiment toolkit, not a general equation solver or an independently audited scientific package.**
+Tests check analytic answers, numerical invariants and failure cases: optimizer recurrence, principal conservation, RC unit conversions, SIR population, Bayes denominators, tied classifier scores, one-class data, exact sweep coordinates, immutable inputs, sensitivity boundaries and bounded work. Integration checks cover CLI provenance, portable bundles, worker source, CSP hashes, schema parity and local server boundaries.
 
-## Contribute
+CI runs Node 20/24 on Linux and Windows. Floating-point results can differ in their final digits across JavaScript runtimes. Source fingerprints identify the included implementations; they are not an independent scientific audit.
 
-The best additions are new model families with a useful question, explicit assumptions, meaningful numerical checks and a strong example. [Contribution guide](CONTRIBUTING.md) · [Architecture](docs/ARCHITECTURE.md) · [Release checklist](docs/RELEASE.md) · [Security](SECURITY.md)
+## Contribute a calculation worth exploring
 
-Built by [Owen Song](https://github.com/owenawsong), a student developer working on machine learning and useful software. [MIT](LICENSE).
+A new model needs a useful question, explicit assumptions, meaningful numerical checks and an example that reveals something when an input changes.
+
+[Contributing](CONTRIBUTING.md) · [Architecture](docs/ARCHITECTURE.md) · [Release checklist](docs/RELEASE.md) · [Security](SECURITY.md) · [MIT license](LICENSE)
+
+Built by [Owen Song](https://github.com/owenawsong), a student developer working on machine learning and useful software.

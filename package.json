@@ -1,6 +1,6 @@
 {
   "name": "counterplot",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Build portable interactive experiments from bounded, tested numerical models.",
   "type": "module",
   "bin": {
@@ -15,6 +15,10 @@
     "./render": {
       "types": "./src/render.d.ts",
       "default": "./src/render.js"
+    },
+    "./analysis": {
+      "types": "./src/analysis.d.ts",
+      "default": "./src/analysis.js"
     }
   },
   "files": [

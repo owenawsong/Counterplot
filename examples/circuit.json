@@ -1,13 +1,39 @@
 {
   "schemaVersion": 1,
   "model": "circuit",
-  "title": "Almost charged. Never quite finished.",
-  "description": "An ideal capacitor approaches its target exponentially. Change resistance or capacitance and compare the same transition in real seconds.",
-  "parameters": {"resistance": 10, "capacitance": 100, "supply": 5, "initial": 0, "duration": 5},
+  "title": "RC charging and discharging",
+  "description": "Calculate an ideal circuit response, compare time constants and inspect equilibrium behavior.",
+  "parameters": {
+    "resistance": 10,
+    "capacitance": 100,
+    "supply": 5,
+    "initial": 0,
+    "duration": 5
+  },
   "scenarios": [
-    {"name": "Double the resistance", "parameters": {"resistance": 20}},
-    {"name": "Double the capacitance", "parameters": {"capacitance": 200}},
-    {"name": "Discharge toward the supply", "parameters": {"initial": 12}},
-    {"name": "No voltage difference", "parameters": {"initial": 5}}
+    {
+      "name": "Double the resistance",
+      "parameters": {
+        "resistance": 20
+      }
+    },
+    {
+      "name": "Double the capacitance",
+      "parameters": {
+        "capacitance": 200
+      }
+    },
+    {
+      "name": "Discharge toward the supply",
+      "parameters": {
+        "initial": 12
+      }
+    },
+    {
+      "name": "No voltage difference",
+      "parameters": {
+        "initial": 5
+      }
+    }
   ]
 }

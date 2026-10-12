@@ -1,5 +1,6 @@
-export type Model = 'descent' | 'loan' | 'circuit' | 'epidemic' | 'bayes';
+export type Model = 'descent' | 'loan' | 'circuit' | 'epidemic' | 'bayes' | 'classification';
 export interface Parameters {
+  classification: { threshold: number };
   descent: { rate: number; a: number; b: number; x: number; y: number; steps: number };
   loan: { principal: number; apr: number; years: number; extra: number };
   circuit: {
@@ -20,6 +21,11 @@ export interface Parameters {
   };
   bayes: { prevalence: number; sensitivity: number; specificity: number; population: number };
 }
+export interface ClassificationData {
+  labels: Array<0 | 1>;
+  scores: number[];
+  source?: string;
+}
 export type Experiment<M extends Model = Model> = M extends Model
   ? {
       schemaVersion: 1;
@@ -28,7 +34,7 @@ export type Experiment<M extends Model = Model> = M extends Model
       description: string;
       parameters: Parameters[M];
       scenarios?: Array<{ name: string; parameters: Partial<Parameters[M]> }>;
-    }
+    } & (M extends 'classification' ? { data: ClassificationData } : { data?: never })
   : never;
 export interface Control {
   label: string;
@@ -50,6 +56,7 @@ export interface ModelDefinition {
   references: Array<{ label: string; url: string }>;
 }
 export interface Metric {
+  key: string;
   label: string;
   value: number | null;
   unit: string;
@@ -83,6 +90,24 @@ export interface Result<M extends Model = Model> {
   rows: Array<Record<string, number | string | null>>;
   insights: Array<{ label: string; text: string }>;
   warnings: string[];
+  classification?: ClassificationResult;
+}
+export interface ClassificationResult {
+  confusion: { tp: number; fp: number; tn: number; fn: number };
+  positives: number;
+  negatives: number;
+  count: number;
+  roc: Array<{ threshold: number | null; fpr: number | null; tpr: number | null }>;
+  pr: Array<{ threshold: number | null; recall: number | null; precision: number | null }>;
+  rocAuc: number | null;
+  averagePrecision: number | null;
+  operatingPoint: {
+    threshold: number;
+    precision: number | null;
+    recall: number | null;
+    fpr: number | null;
+    tpr: number | null;
+  };
 }
 export const VERSION: string;
 export type DeepReadonly<T> = T extends object

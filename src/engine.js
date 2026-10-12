@@ -1,5 +1,5 @@
 /** Pure, shared numerical engine. No DOM, dependencies, network, or expression evaluation. */
-export const VERSION = '0.1.0';
+export const VERSION = '0.2.0';
 const control = (label, unit, min, max, step, value, help) => ({
   label,
   unit,
@@ -17,6 +17,36 @@ function deepFreeze(value) {
   return Object.freeze(value);
 }
 export const MODELS = deepFreeze({
+  classification: {
+    label: 'Classification thresholds',
+    field: 'Real-data analysis',
+    question: 'What does this classifier trade away when its threshold changes?',
+    formula:
+      'predicted positive ⇔ score ≥ threshold · precision = TP/(TP+FP) · recall = TP/(TP+FN)',
+    controls: {
+      threshold: control(
+        'Decision threshold',
+        'score',
+        0,
+        1,
+        0.01,
+        0.5,
+        'Inclusive cutoff: scores equal to the threshold are predicted positive.',
+      ),
+    },
+    assumptions: [
+      'Binary observed labels (0/1) and finite scores in [0,1]; scores need not be calibrated probabilities.',
+      'Metrics describe the supplied observations. No independence, representativeness or held-out evaluation is verified.',
+      'ROC/PR points add equal-score groups together. Average precision uses a step integral, not trapezoidal PR area.',
+      'Undefined denominators remain null. Choosing a threshold on these labels is tuning, not an unbiased final evaluation.',
+    ],
+    references: [
+      {
+        label: 'scikit-learn · Model evaluation: classification metrics',
+        url: 'https://scikit-learn.org/stable/modules/model_evaluation.html#classification-metrics',
+      },
+    ],
+  },
   descent: {
     label: 'Gradient descent',
     field: 'Machine learning',
@@ -352,12 +382,18 @@ function checkParameters(model, parameters, path, issues, partial = false) {
     }
   }
 }
+function engineSparseIndex(array) {
+  for (let index = 0; index < array.length; index++) {
+    if (!Object.hasOwn(array, index)) return index;
+  }
+  return -1;
+}
 export function validateSpec(spec) {
   const issues = [];
   if (
     !exact(
       spec,
-      ['schemaVersion', 'model', 'title', 'description', 'parameters', 'scenarios'],
+      ['schemaVersion', 'model', 'title', 'description', 'parameters', 'scenarios', 'data'],
       'spec',
       issues,
     )
@@ -370,9 +406,16 @@ export function validateSpec(spec) {
   textField(spec.title, 'spec.title', 140, issues);
   textField(spec.description, 'spec.description', 1200, issues);
   if (model) checkParameters(model, spec.parameters, 'spec.parameters', issues);
+  if (spec.model === 'classification') checkClassificationData(spec.data, issues);
+  else if (Object.hasOwn(spec, 'data'))
+    issues.push('spec.data: only classification accepts observed data');
   if (spec.scenarios !== undefined) {
     if (!Array.isArray(spec.scenarios) || spec.scenarios.length > 8)
       issues.push('spec.scenarios: expected at most eight scenarios');
+    else if (engineSparseIndex(spec.scenarios) !== -1)
+      issues.push(
+        `spec.scenarios[${engineSparseIndex(spec.scenarios)}]: sparse array slot is missing`,
+      );
     else
       spec.scenarios.forEach((scenario, i) => {
         if (!exact(scenario, ['name', 'parameters'], `spec.scenarios[${i}]`, issues)) return;
@@ -403,11 +446,44 @@ function checkRelations(model, p, path, issues) {
   if (model === 'epidemic' && p.infected > p.population)
     issues.push(`${path}: infected must not exceed population`);
 }
+function checkClassificationData(data, issues) {
+  if (!exact(data, ['labels', 'scores', 'source'], 'spec.data', issues)) return;
+  for (const key of ['labels', 'scores']) {
+    if (!Array.isArray(data[key]) || data[key].length < 2 || data[key].length > 2000) {
+      issues.push(`spec.data.${key}: expected an array of 2..2000 observations`);
+      continue;
+    }
+    const missingIndex = engineSparseIndex(data[key]);
+    if (missingIndex !== -1) {
+      issues.push(`spec.data.${key}[${missingIndex}]: sparse array slot is missing`);
+      continue;
+    }
+    for (const [i, value] of data[key].entries()) {
+      if (
+        key === 'labels'
+          ? value !== 0 && value !== 1
+          : typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1
+      ) {
+        issues.push(
+          `spec.data.${key}[${i}]: expected ${key === 'labels' ? 'binary label 0 or 1' : 'finite score in [0,1]'}`,
+        );
+      }
+    }
+  }
+  if (
+    Array.isArray(data.labels) &&
+    Array.isArray(data.scores) &&
+    data.labels.length !== data.scores.length
+  ) {
+    issues.push('spec.data: labels and scores must have the same length');
+  }
+  if (data.source !== undefined) textField(data.source, 'spec.data.source', 500, issues);
+}
 export function createSpec(model = 'descent') {
   if (typeof model !== 'string' || !Object.hasOwn(MODELS, model))
     throw new SpecError([`Unknown model: ${model}`]);
   const definition = MODELS[model];
-  return {
+  const spec = {
     schemaVersion: 1,
     model,
     title: definition.question,
@@ -416,8 +492,28 @@ export function createSpec(model = 'descent') {
       Object.entries(definition.controls).map(([k, c]) => [k, c.value]),
     ),
   };
+  if (model === 'classification')
+    spec.data = {
+      labels: [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+      scores: [
+        0.94, 0.82, 0.81, 0.76, 0.73, 0.65, 0.62, 0.6, 0.58, 0.55, 0.55, 0.49, 0.44, 0.4, 0.35,
+        0.31, 0.26, 0.18, 0.12, 0.07,
+      ],
+      source: 'Authored teaching fixture, not measured predictions from a trained model.',
+    };
+  return spec;
 }
-const metric = (label, value, unit = '', digits = 2) => ({ label, value, unit, digits });
+const metric = (label, value, unit = '', digits = 2) => ({
+  key: label
+    .normalize('NFKD')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, ''),
+  label,
+  value,
+  unit,
+  digits,
+});
 const line = (name, points, unit = '') => ({ name, points, unit });
 const fmt = (n, digits = 2) =>
   n === null ? 'undefined' : Number(n).toLocaleString('en-US', { maximumFractionDigits: digits });
@@ -429,10 +525,141 @@ export function evaluate(spec, overrides = {}) {
   const p = { ...clean.parameters, ...overrides };
   checkRelations(clean.model, p, 'overrides', issues);
   if (issues.length) throw new SpecError(issues);
-  const result = calculators[clean.model](p);
+  const result = calculators[clean.model](p, clean.data);
   return { engineVersion: VERSION, model: clean.model, parameters: p, ...result };
 }
+function classificationCalculation(p, data) {
+  const ratio = (a, b) => (b === 0 ? null : a / b);
+  const percent = (value) => (value === null ? null : value * 100);
+  const confusion = { tp: 0, fp: 0, tn: 0, fn: 0 };
+  const rows = data.labels.map((label, index) => {
+    const score = data.scores[index],
+      predicted = score >= p.threshold ? 1 : 0;
+    const outcome = label === 1 ? (predicted === 1 ? 'TP' : 'FN') : predicted === 1 ? 'FP' : 'TN';
+    confusion[outcome.toLowerCase()]++;
+    return { observation: index + 1, label, score, predicted, outcome };
+  });
+  const positives = confusion.tp + confusion.fn,
+    negatives = confusion.tn + confusion.fp;
+  const precision = ratio(confusion.tp, confusion.tp + confusion.fp),
+    recall = ratio(confusion.tp, positives);
+  const f1 = ratio(2 * confusion.tp, 2 * confusion.tp + confusion.fp + confusion.fn);
+  const fpr = ratio(confusion.fp, negatives);
+  const ordered = rows.slice().sort((a, b) => b.score - a.score);
+  let tp = 0,
+    fp = 0,
+    auc = positives && negatives ? 0 : null,
+    ap = positives ? 0 : null,
+    previousRecall = 0,
+    previousFpr = 0;
+  const roc = [{ threshold: null, fpr: negatives ? 0 : null, tpr: positives ? 0 : null }];
+  const pr = [{ threshold: null, recall: positives ? 0 : null, precision: null }];
+  for (let start = 0; start < ordered.length; ) {
+    let end = start;
+    while (end < ordered.length && ordered[end].score === ordered[start].score) {
+      if (ordered[end].label === 1) tp++;
+      else fp++;
+      end++;
+    }
+    const currentRecall = ratio(tp, positives),
+      currentFpr = ratio(fp, negatives),
+      currentPrecision = ratio(tp, tp + fp);
+    roc.push({ threshold: ordered[start].score, fpr: currentFpr, tpr: currentRecall });
+    pr.push({
+      threshold: ordered[start].score,
+      recall: currentRecall,
+      precision: currentPrecision,
+    });
+    if (auc !== null) auc += ((currentFpr - previousFpr) * (currentRecall + previousRecall)) / 2;
+    if (ap !== null) ap += (currentRecall - previousRecall) * currentPrecision;
+    previousRecall = currentRecall;
+    previousFpr = currentFpr;
+    start = end;
+  }
+  const warnings = [];
+  if (!positives || !negatives)
+    warnings.push('ROC AUC is undefined because the supplied labels contain only one class.');
+  if (!positives)
+    warnings.push(
+      'Recall and average precision are undefined because there are no positive observed labels.',
+    );
+  if (precision === null)
+    warnings.push(
+      'Precision is undefined because no observations are predicted positive at this threshold.',
+    );
+  warnings.push(
+    'Metrics describe the supplied rows. Selecting a threshold here is tuning on these labels, not independent validation.',
+  );
+  const classification = {
+    confusion,
+    positives,
+    negatives,
+    count: rows.length,
+    roc,
+    pr,
+    rocAuc: auc,
+    averagePrecision: ap,
+    operatingPoint: { threshold: p.threshold, precision, recall, fpr, tpr: recall },
+  };
+  return {
+    metrics: [
+      metric('Accuracy', ((confusion.tp + confusion.tn) / rows.length) * 100, '%', 2),
+      metric('Precision', percent(precision), '%', 2),
+      metric('Recall', percent(recall), '%', 2),
+      metric('F1', f1, '', 4),
+      metric('ROC AUC', auc, '', 4),
+      metric('Average precision', ap, '', 4),
+    ],
+    chart: {
+      xLabel: 'False-positive rate',
+      yLabel: 'True-positive rate',
+      kind: 'roc',
+      series: [
+        line(
+          'ROC',
+          roc
+            .filter((point) => point.fpr !== null && point.tpr !== null)
+            .map((point) => ({ x: point.fpr, y: point.tpr })),
+        ),
+      ],
+      ...(fpr !== null && recall !== null ? { marker: { x: fpr, y: recall } } : {}),
+    },
+    secondary: {
+      xLabel: 'Recall',
+      yLabel: 'Precision',
+      kind: 'pr',
+      series: [
+        line(
+          'Precision–recall',
+          pr
+            .filter((point) => point.recall !== null)
+            .map((point) => ({ x: point.recall, y: point.precision })),
+        ),
+      ],
+      ...(precision !== null && recall !== null ? { marker: { x: recall, y: precision } } : {}),
+    },
+    columns: ['observation', 'label', 'score', 'predicted', 'outcome'],
+    rows,
+    classification,
+    insights: [
+      {
+        label: 'One cutoff, four outcomes',
+        text: `At score ≥ ${fmt(p.threshold, 4)}: ${confusion.tp} true positives, ${confusion.fp} false positives, ${confusion.tn} true negatives and ${confusion.fn} false negatives.`,
+      },
+      {
+        label: 'Ranking and decisions are different',
+        text: 'ROC AUC and average precision summarize rankings across every unique score. They do not change when only the selected decision threshold changes.',
+      },
+      {
+        label: 'The evaluation set matters',
+        text: `There are ${positives} positive and ${negatives} negative labels among ${rows.length} supplied observations. ${data.source ? 'Data source note: ' + data.source : 'No data source note was supplied.'}`,
+      },
+    ],
+    warnings,
+  };
+}
 const calculators = {
+  classification: classificationCalculation,
   descent(p) {
     let x = p.x,
       y = p.y;
@@ -775,7 +1002,12 @@ export function csv(result) {
 
 /** Canonical JSON for provenance: recursively sorted keys, unchanged array order and numbers. */
 export function canonicalJson(value) {
-  if (Array.isArray(value)) return '[' + value.map(canonicalJson).join(',') + ']';
+  if (Array.isArray(value)) {
+    const missingIndex = engineSparseIndex(value);
+    if (missingIndex !== -1)
+      throw new SpecError([`canonicalJson[${missingIndex}]: sparse array slot is missing`]);
+    return '[' + value.map(canonicalJson).join(',') + ']';
+  }
   if (value !== null && typeof value === 'object') {
     return (
       '{' +

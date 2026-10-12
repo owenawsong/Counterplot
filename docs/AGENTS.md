@@ -31,4 +31,4 @@ Titles can still be misleading. A spec validator cannot verify the truth of all 
 
 ## Evaluating agent usefulness
 
-No measured agent productivity claim is made in v0.1. A future comparison should give the same tasks to agents with and without the toolkit, independently check numerical correctness, record invalid outputs and measure how much manual correction the final explanation requires. Code compilation and an attractive screenshot alone are insufficient evidence.
+No measured agent productivity claim is made for this toolkit. A future comparison should give the same tasks to agents with and without the toolkit, independently check numerical correctness, record invalid outputs and measure how much manual correction the final explanation requires. Code compilation and an attractive screenshot alone are insufficient evidence.

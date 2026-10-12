@@ -68,9 +68,10 @@ for (const path of await walk(root)) {
     if (/^[a-z][a-z0-9+.-]*:/i.test(link)) continue;
     const target = resolve(dirname(path), link);
     assert.ok(!relative(root, target).startsWith('..'), `Link escapes repo: ${link}`);
-    await stat(target).catch(() => {
+    const entry = await stat(target).catch(() => {
       throw new Error(`${relative(root, path)}: missing ${link}`);
     });
+    if (entry.isFile()) assert.ok(entry.size > 0, `${relative(root,path)}: empty linked file ${link}`);
   }
 }
 console.log(

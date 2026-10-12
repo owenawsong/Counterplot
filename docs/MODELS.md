@@ -67,3 +67,19 @@ Expected counts can be fractional. No actual patients, diagnoses or test calibra
 Tests check the known 95/194 positive denominator, expected-count conservation, population scaling, perfect tests and impossible conditioning events.
 
 Reference: [OpenStax introductory statistics, probability](https://openstax.org/books/introductory-statistics-2e/pages/3-2-independent-and-mutually-exclusive-events).
+
+## Observed binary classification
+
+Input consists of 2–2,000 paired binary labels and scores in [0,1]. Labels encode the observed positive class as 1. A threshold t predicts positive exactly when `score >= t`, including ties. Scores need not be calibrated probabilities. The toolkit verifies numeric shape, not dataset independence, representativeness, label quality or evaluation split.
+
+At the selected threshold count TP, FP, TN and FN. Accuracy is `(TP+TN)/N`; precision is `TP/(TP+FP)`; recall is `TP/(TP+FN)`; F1 is `2TP/(2TP+FP+FN)`. A zero denominator produces null, not the zero-filling convention used by some libraries. Accuracy, precision and recall metrics are displayed in percent; F1, ROC AUC and average precision are fractions in [0,1].
+
+ROC and PR curves sort scores descending, adding **all equal scores together**. The initial null-threshold point represents no predicted positives: recall/TPR zero if positives exist, FPR zero if negatives exist, and precision undefined because no predictions exist. Then each unique-score threshold includes the whole group at that score. This avoids arbitrary within-tie ordering and agrees with a pairwise interpretation of ROC AUC: probability that a positive scores above a negative, with half credit for a tie.
+
+ROC AUC uses the trapezoidal integral of tied-group TPR versus FPR. It is undefined if either observed class is absent. Average precision uses `sum((recall_k−recall_(k−1)) × precision_k)` over included groups. It is a right-step precision–recall integral, **not trapezoidal PR area**. Average precision is undefined without positives; with only positive labels it is one. The PR baseline under uninformative ordering depends on the positive fraction, not a universal 0.5.
+
+Changing the selected threshold changes the confusion matrix and threshold metrics. Ranking areas/curves are unchanged. Selecting a threshold to maximize a metric on these rows is tuning on these labels; report final performance on independent data. No confidence intervals, calibration assessment or multiclass evaluation are inferred.
+
+Tests check hand-calculated confusion/areas, an independent pairwise AUC identity, perfect/reversed rankings, exact ties, score boundaries, threshold invariance, one-class and no-prediction undefined outcomes, and invalid/sparse data rejection.
+
+Reference: [scikit-learn model evaluation](https://scikit-learn.org/stable/modules/model_evaluation.html#classification-metrics). This implementation is dependency-free and documents its explicit null conventions rather than inheriting a library's defaults.

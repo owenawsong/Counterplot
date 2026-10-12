@@ -97,6 +97,30 @@ test('canonical serialization preserves numbers and array order while normalizin
   assert.throws(() => canonicalJson(Infinity), /finite/);
   assert.equal(canonicalJson({ a: 1, optional: undefined }), canonicalJson({ a: 1 }));
 });
+test('sparse scenario arrays and sparse canonical arrays are rejected explicitly', () => {
+  const spec = createSpec();
+  for (const scenarios of [
+    new Array(1),
+    new Array(2),
+    [{ name: 'valid', parameters: {} }, , { name: 'also valid', parameters: {} }],
+  ]) {
+    assert.throws(
+      () => validateSpec({ ...spec, scenarios }),
+      (error) => error instanceof SpecError && error.message.includes('sparse'),
+    );
+  }
+  for (const value of [new Array(1), new Array(2), [1, , 3], { nested: [1, , 3] }]) {
+    assert.throws(
+      () => canonicalJson(value),
+      (error) => error instanceof SpecError && error.message.includes('sparse'),
+    );
+  }
+  assert.equal(canonicalJson([null]), '[null]');
+  assert.notEqual(canonicalJson([null]), canonicalJson([]));
+  assert.throws(() => canonicalJson(undefined), /JSON/);
+  assert.throws(() => canonicalJson([undefined]), /JSON/);
+  assert.throws(() => validateSpec({ ...spec, scenarios: [null] }), SpecError);
+});
 test('quadratic recurrence, descent, boundary oscillation and divergence are distinct', () => {
   const spec = createSpec();
   const stable = evaluate(spec, { rate: 0.1, x: 5, y: 4, a: 1, b: 8, steps: 2 });
@@ -221,7 +245,7 @@ test('CSV preserves numbers and escapes text and spreadsheet formula injection',
 });
 test('generated schema follows every model and authoritative bounds', () => {
   const schema = experimentSchema();
-  assert.equal(schema.oneOf.length, 5);
+  assert.equal(schema.oneOf.length, Object.keys(MODELS).length);
   for (const branch of schema.oneOf) {
     const controls = MODELS[branch.properties.model.const].controls;
     assert.deepEqual(branch.properties.parameters.required, Object.keys(controls));

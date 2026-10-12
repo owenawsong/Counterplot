@@ -15,7 +15,8 @@ import {
   resultEnvelope,
 } from '../src/engine.js';
 import { renderExperiment } from '../src/render.js';
-import { ENGINE_SHA256 } from '../src/source.js';
+import { ENGINE_SHA256, ANALYSIS_SHA256 } from '../src/source.js';
+import { sweep, sensitivity } from '../src/analysis.js';
 
 export const HELP = `Counterplot ${VERSION} · portable, computed experiments
 
@@ -25,6 +26,8 @@ export const HELP = `Counterplot ${VERSION} · portable, computed experiments
   counterplot build experiment.json --out experiment.html [--force]
   counterplot export experiment.json --format json|csv --out results.json [--force]
   counterplot compare before.json after.json [--out comparison.json] [--force]
+  counterplot sweep experiment.json --config study.json --out study-results.json [--force]
+  counterplot sensitivity experiment.json [--config sensitivity.json] --out sensitivity-results.json [--force]
   counterplot serve directory [--port 18872]
 
 Models: ${Object.keys(MODELS).join(', ')}
@@ -102,6 +105,28 @@ export function resultDocument(spec) {
   const specSha256 = createHash('sha256').update(canonicalJson(clean)).digest('hex');
   return resultEnvelope(clean, ENGINE_SHA256, specSha256);
 }
+export function analysisDocument(spec, action, options) {
+  const clean = validateSpec(spec);
+  const results =
+    action === 'sweep'
+      ? sweep(clean, options)
+      : action === 'sensitivity'
+        ? sensitivity(clean, options)
+        : null;
+  if (!results) throw new Error('Unknown analysis action.');
+  return {
+    format: 'counterplot-analysis',
+    formatVersion: 1,
+    engineVersion: VERSION,
+    engineSha256: ENGINE_SHA256,
+    analysisSha256: ANALYSIS_SHA256,
+    specSha256: createHash('sha256').update(canonicalJson(clean)).digest('hex'),
+    spec: clean,
+    action,
+    options,
+    results,
+  };
+}
 export async function serve(directory, port = 18872) {
   if (!Number.isInteger(port) || port < 1024 || port > 65535)
     throw new Error('Port must be an integer from 1024 to 65535.');
@@ -173,6 +198,8 @@ export async function main(args = process.argv.slice(2)) {
     build: { out: 'string', force: 'boolean' },
     export: { format: 'string', out: 'string', force: 'boolean' },
     compare: { out: 'string', force: 'boolean' },
+    sweep: { config: 'string', out: 'string', force: 'boolean' },
+    sensitivity: { config: 'string', out: 'string', force: 'boolean' },
     serve: { port: 'string' },
   };
   if (!Object.hasOwn(options, command)) throw new Error(`Unknown command: ${command}`);
@@ -271,6 +298,19 @@ export async function main(args = process.argv.slice(2)) {
     const text = JSON.stringify(report, null, 2) + '\n';
     if (flags.out) console.log(await atomicWrite(flags.out, text, flags.force));
     else console.log(text);
+  } else if (command === 'sweep' || command === 'sensitivity') {
+    need(positionals, 1);
+    if (command === 'sweep' && !flags.config)
+      throw new Error('Sweep requires --config with explicit axes.');
+    const spec = await readSpec(positionals[0]);
+    let options = {};
+    if (flags.config) {
+      const info = await stat(flags.config);
+      if (info.size > 100000) throw new Error('Analysis config exceeds 100 KB.');
+      options = JSON.parse(await readFile(flags.config, 'utf8'));
+    }
+    const value = analysisDocument(spec, command, options);
+    console.log(await atomicWrite(out(flags), JSON.stringify(value, null, 2) + '\n', flags.force));
   } else if (command === 'serve') {
     need(positionals, 1);
     const port = flags.port === undefined ? 18872 : Number(flags.port);

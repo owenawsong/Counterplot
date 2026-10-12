@@ -1,0 +1,5 @@
+{
+  "axes": [{"parameter":"rate","min":0.02,"max":0.3,"points":15},{"parameter":"b","min":2,"max":10,"points":9}],
+  "metrics":["final-objective"],
+  "objective":{"metric":"final-objective","direction":"min"}
+}

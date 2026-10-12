@@ -1,6 +1,6 @@
 # CLI reference
 
-All commands work from any directory. The source checkout entrypoint is `node /path/to/Counterplot/bin/counterplot.js`. Installing a locally built package with `npm install -g ./counterplot-0.1.0.tgz` adds the `counterplot` command. There is no public npm release assumed by the quickstart.
+All commands work from any directory. The source checkout entrypoint is `node /path/to/Counterplot/bin/counterplot.js`. Installing a locally built package with `npm install -g ./counterplot-0.2.0.tgz` adds the `counterplot` command. There is no public npm release assumed by the quickstart.
 
 ## init
 
@@ -38,6 +38,14 @@ JSON preserves complete results, exact inputs and provenance. CSV exports the fa
 
 Specs must use the same model family. Produces both complete result documents and per-metric raw deltas. Without `--out`, writes JSON to stdout. Different units/families cannot be compared. It does not test causal identifiability or rank scenarios as “better”.
 
+## sweep and sensitivity
+
+`counterplot sweep experiment.json --config study.json --out grid.json [--force]`
+
+`counterplot sensitivity experiment.json [--config sensitivity.json] --out sensitivity.json [--force]`
+
+Calculate a bounded parameter grid or local finite-perturbation sensitivity. Sweep configuration declares one or two axes, metric keys and an optional sampled objective. Sensitivity configuration can choose parameters, perturbation sizes and metrics. Config files must be JSON under 100 KB. Output uses the same `counterplot-analysis` envelope as the browser, with frozen inputs, exact results, warnings and numerical/analysis source fingerprints. Invalid specifications or analysis configurations exit nonzero. See [the analysis reference](ANALYSIS.md) for schemas, work limits and interpretation.
+
 ## serve
 
 `counterplot serve DIRECTORY [--port 18872]`
@@ -49,3 +57,5 @@ The development server is not a production host. Publish the built `site/` direc
 ## Node API
 
 `createSpec(model)`, `validateSpec(spec)`, `evaluate(spec, partialOverrides)`, `csv(result)`, `MODELS`, `VERSION` are exported from the package root. Validation returns a clone; evaluation does not mutate its inputs. `renderExperiment(spec)` is exported from `counterplot/render` and requires Node filesystem access to packaged templates.
+
+`sweep(spec, options)`, `sensitivity(spec, options)`, `metricCatalog(spec)` and `ANALYSIS_LIMITS` are exported from `counterplot/analysis`. The engine and analysis module use no Node APIs. Classification specs include validated `data.labels`, `data.scores` and an optional plain-text `data.source`.
