@@ -131,11 +131,13 @@ test('SIR conserves population and aligns intervention at exact day', () => {
     late = evaluate(spec, { intervention: 180 });
   assert.deepEqual(none.rows, late.rows);
   const stop = evaluate(spec, { intervention: 0, reduction: 100 });
+  close(stop.metrics[0].value, 0);
   close(stop.rows[10].infected, 10 * Math.exp(-1), 1e-8);
   close(stop.rows[10].susceptible, 9990);
   const early = evaluate(spec, { intervention: 10 });
   assert.ok(early.metrics[1].value < r.metrics[1].value);
   assert.throws(() => evaluate(spec, { population: 100, infected: 101 }), /infected/);
+  assert.throws(() => evaluate(spec, { population: 100.5 }), /integer/);
 });
 test('SIR no-intervention final-size invariant within numerical tolerance', () => {
   const spec = createSpec('epidemic');
@@ -154,6 +156,7 @@ test('Bayes uses the positive denominator and exposes undefined events', () => {
     10000,
   );
   const scale = evaluate(spec, { population: 100000 });
+  assert.throws(() => evaluate(spec, { population: 100.5 }), /integer/);
   close(scale.metrics[0].value, r.metrics[0].value);
   close(scale.rows[0].expected, r.rows[0].expected * 10);
   const perfect = evaluate(spec, { specificity: 100, sensitivity: 100 });

@@ -48,7 +48,7 @@ Reference: [OpenStax University Physics, RC circuits](https://openstax.org/books
 
 At the chosen intervention day, β is multiplied by `(1 − reduction/100)` permanently. Integration uses classical fourth-order Runge–Kutta with a maximum internal step of 0.1 day. Steps split exactly at the intervention boundary; daily samples are exported. An intervention at day zero affects the first derivative. An intervention at the final observation instant has no effect before that instant.
 
-The initial reproduction-number metric is `R0 = β/γ` before intervention and assumes full susceptibility. If intervention starts at zero, its operative initial coefficient is already reduced; see the intervention explanation. Effective reproduction also depends on S/N. This is a homogeneous closed deterministic population with fractional expected counts, not a forecast. It excludes latency, age, births, deaths, varying contact structure, waning immunity and randomness.
+The initial reproduction-number metric is `R0 = β/γ`, including the reduced β when intervention starts at day zero, and assumes full susceptibility. Effective reproduction also depends on S/N. This is a homogeneous closed deterministic population with fractional expected counts, not a forecast. It excludes latency, age, births, deaths, varying contact structure, waning immunity and randomness.
 
 Peak metrics are the maximum of daily samples within the selected horizon. They are not an exact continuous peak or necessarily the eventual peak.
 

@@ -6,6 +6,7 @@ const control = (label, unit, min, max, step, value, help) => ({
   min,
   max,
   step,
+  integer: step === 1 || unit === 'people',
   value,
   help,
 });
@@ -337,10 +338,10 @@ function checkParameters(model, parameters, path, issues, partial = false) {
       !Number.isFinite(value) ||
       value < c.min ||
       value > c.max ||
-      (c.step === 1 && !Number.isInteger(value))
+      (c.integer && !Number.isInteger(value))
     ) {
       issues.push(
-        `${path}.${key}: expected ${c.step === 1 ? 'integer' : 'finite number'} in [${c.min}, ${c.max}]`,
+        `${path}.${key}: expected ${c.integer ? 'integer' : 'finite number'} in [${c.min}, ${c.max}]`,
       );
     }
   }
@@ -639,10 +640,11 @@ const calculators = {
       rows.push({ day, susceptible: state[0], infected: state[1], recovered: state[2] });
     }
     const peak = rows.reduce((a, b) => (b.infected > a.infected ? b : a)),
-      r0 = p.beta / gamma;
+      r0 = p.beta / gamma,
+      initialR0 = r0 * (p.intervention === 0 ? 1 - p.reduction / 100 : 1);
     return {
       metrics: [
-        metric('Initial R₀', r0, '', 3),
+        metric('Initial R₀', initialR0, '', 3),
         metric('Peak infectious', peak.infected, 'people', 1),
         metric('Sampled peak day', peak.day, 'day', 0),
       ],
@@ -669,7 +671,7 @@ const calculators = {
         },
         {
           label: 'R₀ and actual growth',
-          text: `Initial R₀ is ${fmt(r0, 3)}. The instantaneous growth factor also depends on the remaining susceptible fraction; R₀ alone does not locate the peak.`,
+          text: `Initial R₀ is ${fmt(initialR0, 3)}, including an intervention at day zero. The instantaneous growth factor also depends on the remaining susceptible fraction; R₀ alone does not locate the peak.`,
         },
       ],
       warnings: [

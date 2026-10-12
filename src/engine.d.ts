@@ -36,6 +36,7 @@ export interface Control {
   min: number;
   max: number;
   step: number;
+  integer: boolean;
   value: number;
   help: string;
 }

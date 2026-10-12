@@ -436,7 +436,7 @@
           ],
           "properties": {
             "population": {
-              "type": "number",
+              "type": "integer",
               "minimum": 100,
               "maximum": 1000000,
               "description": "Population (people). Closed, homogeneous population; integer."
@@ -501,7 +501,7 @@
                 "additionalProperties": false,
                 "properties": {
                   "population": {
-                    "type": "number",
+                    "type": "integer",
                     "minimum": 100,
                     "maximum": 1000000,
                     "description": "Population (people). Closed, homogeneous population; integer."
@@ -607,7 +607,7 @@
               "description": "Specificity (%). Probability of a negative result without the condition."
             },
             "population": {
-              "type": "number",
+              "type": "integer",
               "minimum": 100,
               "maximum": 1000000,
               "description": "Illustrative population (people). Expected counts scale with population; probabilities do not."
@@ -654,7 +654,7 @@
                     "description": "Specificity (%). Probability of a negative result without the condition."
                   },
                   "population": {
-                    "type": "number",
+                    "type": "integer",
                     "minimum": 100,
                     "maximum": 1000000,
                     "description": "Illustrative population (people). Expected counts scale with population; probabilities do not."

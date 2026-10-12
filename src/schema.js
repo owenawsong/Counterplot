@@ -9,7 +9,7 @@ export function experimentSchema() {
         Object.entries(model.controls).map(([k, c]) => [
           k,
           {
-            type: c.step === 1 ? 'integer' : 'number',
+            type: c.integer ? 'integer' : 'number',
             minimum: c.min,
             maximum: c.max,
             description: `${c.label}${c.unit ? ' (' + c.unit + ')' : ''}. ${c.help}`,
