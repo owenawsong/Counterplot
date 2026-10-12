@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "model": "loan",
+  "title": "The small payment that changes a long loan.",
+  "description": "A fixed-rate loan is a sequence of interest and principal payments. Pin a baseline, add a little each month, and inspect exactly where the difference comes from.",
+  "parameters": {"principal": 250000, "apr": 6, "years": 30, "extra": 0},
+  "scenarios": [
+    {"name": "An extra 200 a month", "parameters": {"extra": 200}},
+    {"name": "An extra 500 a month", "parameters": {"extra": 500}},
+    {"name": "Zero-interest sanity check", "parameters": {"apr": 0}},
+    {"name": "A shorter contract", "parameters": {"years": 15}}
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "name": "counterplot",
+  "version": "0.1.0",
+  "description": "Build portable interactive experiments from bounded, tested numerical models.",
+  "type": "module",
+  "bin": {
+    "counterplot": "./bin/counterplot.js"
+  },
+  "types": "./src/engine.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/engine.d.ts",
+      "default": "./src/engine.js"
+    },
+    "./render": {
+      "types": "./src/render.d.ts",
+      "default": "./src/render.js"
+    }
+  },
+  "files": [
+    "bin",
+    "src",
+    "web",
+    "examples",
+    "skills",
+    "docs",
+    "schema",
+    "assets",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "typecheck": "tsc",
+    "build": "node scripts/build-gallery.js",
+    "check": "node scripts/check-release.js",
+    "start": "node bin/counterplot.js serve site"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "author": "Owen Song",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/owenawsong/Counterplot.git"
+  },
+  "keywords": [
+    "interactive-explanations",
+    "simulation",
+    "agents",
+    "visualization",
+    "education",
+    "numerical-models"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}

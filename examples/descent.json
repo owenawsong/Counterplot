@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "model": "descent",
+  "title": "A bigger step can take you further from the answer.",
+  "description": "Follow gradient descent across a narrow quadratic valley. Tune the learning rate, then watch the same update rule settle, zigzag, or escape.",
+  "parameters": {"rate": 0.12, "a": 1, "b": 8, "x": 5, "y": 4, "steps": 50},
+  "scenarios": [
+    {"name": "Slow and steady", "parameters": {"rate": 0.035}},
+    {"name": "Zigzag, but converge", "parameters": {"rate": 0.23}},
+    {"name": "Exactly on the boundary", "parameters": {"rate": 0.25}},
+    {"name": "A step too far", "parameters": {"rate": 0.29}}
+  ]
+}

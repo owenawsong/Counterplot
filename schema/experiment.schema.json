@@ -1,0 +1,670 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Counterplot experiment v1",
+  "description": "Relations such as infected ≤ population are checked by the numerical engine.",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "model",
+        "title",
+        "description",
+        "parameters"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "model": {
+          "const": "descent"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "pattern": "\\S"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1200,
+          "pattern": "\\S"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "rate",
+            "a",
+            "b",
+            "x",
+            "y",
+            "steps"
+          ],
+          "properties": {
+            "rate": {
+              "type": "number",
+              "minimum": 0.005,
+              "maximum": 1,
+              "description": "Learning rate. Step size η. Stability depends on the largest curvature."
+            },
+            "a": {
+              "type": "number",
+              "minimum": 0.2,
+              "maximum": 12,
+              "description": "Curvature along x. Positive quadratic coefficient a."
+            },
+            "b": {
+              "type": "number",
+              "minimum": 0.2,
+              "maximum": 12,
+              "description": "Curvature along y. Positive quadratic coefficient b."
+            },
+            "x": {
+              "type": "number",
+              "minimum": -10,
+              "maximum": 10,
+              "description": "Starting x. Initial coordinate on the x axis."
+            },
+            "y": {
+              "type": "number",
+              "minimum": -10,
+              "maximum": 10,
+              "description": "Starting y. Initial coordinate on the y axis."
+            },
+            "steps": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 250,
+              "description": "Iterations. Maximum number of gradient updates; integer."
+            }
+          }
+        },
+        "scenarios": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "parameters"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "\\S"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "rate": {
+                    "type": "number",
+                    "minimum": 0.005,
+                    "maximum": 1,
+                    "description": "Learning rate. Step size η. Stability depends on the largest curvature."
+                  },
+                  "a": {
+                    "type": "number",
+                    "minimum": 0.2,
+                    "maximum": 12,
+                    "description": "Curvature along x. Positive quadratic coefficient a."
+                  },
+                  "b": {
+                    "type": "number",
+                    "minimum": 0.2,
+                    "maximum": 12,
+                    "description": "Curvature along y. Positive quadratic coefficient b."
+                  },
+                  "x": {
+                    "type": "number",
+                    "minimum": -10,
+                    "maximum": 10,
+                    "description": "Starting x. Initial coordinate on the x axis."
+                  },
+                  "y": {
+                    "type": "number",
+                    "minimum": -10,
+                    "maximum": 10,
+                    "description": "Starting y. Initial coordinate on the y axis."
+                  },
+                  "steps": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 250,
+                    "description": "Iterations. Maximum number of gradient updates; integer."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "model",
+        "title",
+        "description",
+        "parameters"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "model": {
+          "const": "loan"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "pattern": "\\S"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1200,
+          "pattern": "\\S"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "principal",
+            "apr",
+            "years",
+            "extra"
+          ],
+          "properties": {
+            "principal": {
+              "type": "number",
+              "minimum": 100,
+              "maximum": 1000000,
+              "description": "Principal (currency units). An abstract currency; no exchange-rate assumption."
+            },
+            "apr": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 30,
+              "description": "Nominal annual rate (%). Monthly rate = nominal annual rate / 12. Not effective APR including fees."
+            },
+            "years": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 40,
+              "description": "Term (years). Contract term with twelve payments per year; integer."
+            },
+            "extra": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 10000,
+              "description": "Extra monthly payment (currency units). Added to the scheduled payment; the final payment is capped at the amount due."
+            }
+          }
+        },
+        "scenarios": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "parameters"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "\\S"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "principal": {
+                    "type": "number",
+                    "minimum": 100,
+                    "maximum": 1000000,
+                    "description": "Principal (currency units). An abstract currency; no exchange-rate assumption."
+                  },
+                  "apr": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 30,
+                    "description": "Nominal annual rate (%). Monthly rate = nominal annual rate / 12. Not effective APR including fees."
+                  },
+                  "years": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 40,
+                    "description": "Term (years). Contract term with twelve payments per year; integer."
+                  },
+                  "extra": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 10000,
+                    "description": "Extra monthly payment (currency units). Added to the scheduled payment; the final payment is capped at the amount due."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "model",
+        "title",
+        "description",
+        "parameters"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "model": {
+          "const": "circuit"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "pattern": "\\S"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1200,
+          "pattern": "\\S"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "resistance",
+            "capacitance",
+            "supply",
+            "initial",
+            "duration"
+          ],
+          "properties": {
+            "resistance": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 100,
+              "description": "Resistance (kΩ). Converted to ohms before calculation."
+            },
+            "capacitance": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Capacitance (µF). Converted to farads before calculation."
+            },
+            "supply": {
+              "type": "number",
+              "minimum": 0.1,
+              "maximum": 24,
+              "description": "Supply voltage (V). Ideal constant voltage source."
+            },
+            "initial": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 24,
+              "description": "Initial capacitor voltage (V). Can exceed the supply: the current is then negative."
+            },
+            "duration": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 10,
+              "description": "Observe for (time constants). Observation window in multiples of τ."
+            }
+          }
+        },
+        "scenarios": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "parameters"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "\\S"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "resistance": {
+                    "type": "number",
+                    "minimum": 0.1,
+                    "maximum": 100,
+                    "description": "Resistance (kΩ). Converted to ohms before calculation."
+                  },
+                  "capacitance": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1000,
+                    "description": "Capacitance (µF). Converted to farads before calculation."
+                  },
+                  "supply": {
+                    "type": "number",
+                    "minimum": 0.1,
+                    "maximum": 24,
+                    "description": "Supply voltage (V). Ideal constant voltage source."
+                  },
+                  "initial": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 24,
+                    "description": "Initial capacitor voltage (V). Can exceed the supply: the current is then negative."
+                  },
+                  "duration": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 10,
+                    "description": "Observe for (time constants). Observation window in multiples of τ."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "model",
+        "title",
+        "description",
+        "parameters"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "model": {
+          "const": "epidemic"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "pattern": "\\S"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1200,
+          "pattern": "\\S"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "population",
+            "infected",
+            "beta",
+            "recovery",
+            "intervention",
+            "reduction",
+            "days"
+          ],
+          "properties": {
+            "population": {
+              "type": "number",
+              "minimum": 100,
+              "maximum": 1000000,
+              "description": "Population (people). Closed, homogeneous population; integer."
+            },
+            "infected": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000,
+              "description": "Initially infected (people). Must not exceed population; integer."
+            },
+            "beta": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 1,
+              "description": "Transmission coefficient (day⁻¹). Contacts and transmission represented by one constant coefficient."
+            },
+            "recovery": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 30,
+              "description": "Mean infectious period (days). γ is the reciprocal of this value."
+            },
+            "intervention": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 180,
+              "description": "Intervention starts (day). At this day β is multiplied by (1 − reduction/100)."
+            },
+            "reduction": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Transmission reduction (%). Instantaneous, permanent reduction in the coefficient."
+            },
+            "days": {
+              "type": "integer",
+              "minimum": 10,
+              "maximum": 365,
+              "description": "Observation horizon (days). Integer number of days; not an automatic final-size calculation."
+            }
+          }
+        },
+        "scenarios": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "parameters"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "\\S"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "population": {
+                    "type": "number",
+                    "minimum": 100,
+                    "maximum": 1000000,
+                    "description": "Population (people). Closed, homogeneous population; integer."
+                  },
+                  "infected": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1000,
+                    "description": "Initially infected (people). Must not exceed population; integer."
+                  },
+                  "beta": {
+                    "type": "number",
+                    "minimum": 0.01,
+                    "maximum": 1,
+                    "description": "Transmission coefficient (day⁻¹). Contacts and transmission represented by one constant coefficient."
+                  },
+                  "recovery": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 30,
+                    "description": "Mean infectious period (days). γ is the reciprocal of this value."
+                  },
+                  "intervention": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 180,
+                    "description": "Intervention starts (day). At this day β is multiplied by (1 − reduction/100)."
+                  },
+                  "reduction": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Transmission reduction (%). Instantaneous, permanent reduction in the coefficient."
+                  },
+                  "days": {
+                    "type": "integer",
+                    "minimum": 10,
+                    "maximum": 365,
+                    "description": "Observation horizon (days). Integer number of days; not an automatic final-size calculation."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "model",
+        "title",
+        "description",
+        "parameters"
+      ],
+      "properties": {
+        "schemaVersion": {
+          "const": 1
+        },
+        "model": {
+          "const": "bayes"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140,
+          "pattern": "\\S"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1200,
+          "pattern": "\\S"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "prevalence",
+            "sensitivity",
+            "specificity",
+            "population"
+          ],
+          "properties": {
+            "prevalence": {
+              "type": "number",
+              "minimum": 0.01,
+              "maximum": 99.99,
+              "description": "Prevalence (%). Share of the tested population with the condition."
+            },
+            "sensitivity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Sensitivity (%). Probability of a positive result given the condition."
+            },
+            "specificity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100,
+              "description": "Specificity (%). Probability of a negative result without the condition."
+            },
+            "population": {
+              "type": "number",
+              "minimum": 100,
+              "maximum": 1000000,
+              "description": "Illustrative population (people). Expected counts scale with population; probabilities do not."
+            }
+          }
+        },
+        "scenarios": {
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "parameters"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80,
+                "pattern": "\\S"
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "prevalence": {
+                    "type": "number",
+                    "minimum": 0.01,
+                    "maximum": 99.99,
+                    "description": "Prevalence (%). Share of the tested population with the condition."
+                  },
+                  "sensitivity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Sensitivity (%). Probability of a positive result given the condition."
+                  },
+                  "specificity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "Specificity (%). Probability of a negative result without the condition."
+                  },
+                  "population": {
+                    "type": "number",
+                    "minimum": 100,
+                    "maximum": 1000000,
+                    "description": "Illustrative population (people). Expected counts scale with population; probabilities do not."
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

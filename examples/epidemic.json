@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "model": "epidemic",
+  "title": "The timing changes the curve.",
+  "description": "Explore an illustrative SIR system, where susceptible people become infectious and then recover. Compare the same transmission reduction introduced at different times.",
+  "parameters": {"population": 10000, "infected": 10, "beta": 0.3, "recovery": 10, "intervention": 30, "reduction": 40, "days": 180},
+  "scenarios": [
+    {"name": "No intervention", "parameters": {"reduction": 0}},
+    {"name": "Earlier: day 10", "parameters": {"intervention": 10}},
+    {"name": "Later: day 50", "parameters": {"intervention": 50}},
+    {"name": "Below the growth threshold", "parameters": {"beta": 0.08, "reduction": 0}}
+  ]
+}

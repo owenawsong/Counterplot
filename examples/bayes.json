@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "model": "bayes",
+  "title": "A positive result is only half the story.",
+  "description": "A hypothetical test can be highly specific and still produce many false positives in a low-prevalence population. Count both sources of positive results, then compare their proportions.",
+  "parameters": {"prevalence": 1, "sensitivity": 95, "specificity": 99, "population": 10000},
+  "scenarios": [
+    {"name": "Ten times rarer", "parameters": {"prevalence": 0.1}},
+    {"name": "More specific: 99.9%", "parameters": {"specificity": 99.9}},
+    {"name": "Higher-prevalence population", "parameters": {"prevalence": 10}},
+    {"name": "No positive results possible", "parameters": {"sensitivity": 0, "specificity": 100}}
+  ]
+}
