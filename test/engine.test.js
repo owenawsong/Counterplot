@@ -1,6 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MODELS, createSpec, validateSpec, evaluate, csv, SpecError } from '../src/engine.js';
+import {
+  MODELS,
+  createSpec,
+  validateSpec,
+  evaluate,
+  csv,
+  SpecError,
+  canonicalJson,
+} from '../src/engine.js';
 import { experimentSchema } from '../src/schema.js';
 const close = (a, b, tolerance = 1e-9) => assert.ok(Math.abs(a - b) <= tolerance, `${a} ≠ ${b}`);
 
@@ -62,6 +70,33 @@ test('inputs are never mutated and results are deterministic', () => {
   clean.parameters.beta = 0.9;
   assert.equal(spec.parameters.beta, 0.3);
 });
+test('nested definitions are frozen and cannot change validation or calculation', () => {
+  const spec = createSpec('bayes'),
+    before = evaluate(spec);
+  assert.throws(() => {
+    MODELS.bayes.controls.prevalence.min = -100;
+  }, TypeError);
+  assert.throws(() => {
+    MODELS.bayes.controls.prevalence.value = -10;
+  }, TypeError);
+  assert.throws(() => {
+    MODELS.bayes.assumptions.push('Changed');
+  }, TypeError);
+  assert.throws(() => {
+    MODELS.bayes.references[0].url = 'https://malicious.example';
+  }, TypeError);
+  assert.throws(() => evaluate(spec, { prevalence: -10 }), SpecError);
+  assert.deepEqual(evaluate(spec), before);
+});
+test('canonical serialization preserves numbers and array order while normalizing key order', () => {
+  assert.equal(
+    canonicalJson({ b: 2, a: { z: 3, y: 1 }, list: [3, 1] }),
+    canonicalJson({ list: [3, 1], a: { y: 1, z: 3 }, b: 2 }),
+  );
+  assert.notEqual(canonicalJson([1, 2]), canonicalJson([2, 1]));
+  assert.throws(() => canonicalJson(Infinity), /finite/);
+  assert.equal(canonicalJson({ a: 1, optional: undefined }), canonicalJson({ a: 1 }));
+});
 test('quadratic recurrence, descent, boundary oscillation and divergence are distinct', () => {
   const spec = createSpec();
   const stable = evaluate(spec, { rate: 0.1, x: 5, y: 4, a: 1, b: 8, steps: 2 });
@@ -117,6 +152,12 @@ test('RC analytical solution and unit conversions agree with time constant', () 
   assert.ok(discharge.rows.every((r) => r.currentMilliamp < 0));
   const flat = evaluate(spec, { initial: 5 });
   assert.ok(flat.rows.every((r) => r.voltage === 5 && r.currentMilliamp === 0));
+  assert.equal(flat.metrics[1].value, null);
+  assert.ok(flat.insights[0].text.includes('already at equilibrium'));
+  assert.ok(flat.insights[1].text.includes('undefined'));
+  assert.ok(
+    flat.insights.every((item) => !item.text.includes('63.2%') && !item.text.includes('complete.')),
+  );
 });
 test('SIR conserves population and aligns intervention at exact day', () => {
   const spec = createSpec('epidemic'),

@@ -12,6 +12,7 @@ question → bounded JSON spec → validate → pure numerical engine
 
 - `src/engine.js`: model definitions, authoritative validator, calculations and CSV.
 - `src/schema.js`: editor JSON Schema generated from model controls.
+- `src/source.js`: Node source fingerprint, normalized to LF for cross-platform consistency.
 - `src/render.js`: Node-only HTML generation, escaping, safe script serialization and CSP hashes.
 - `web/app.js`: browser interaction, comparison, playback, edit dialog and exports.
 - `web/style.css`: responsive visual system, keyboard focus, print and reduced-motion styles.
@@ -22,6 +23,8 @@ question → bounded JSON spec → validate → pure numerical engine
 The builder embeds the exact engine source after removing ESM export keywords. There are no imported modules in the output. The browser retains the pure validation/evaluation functions. A generated document is an executable artifact built from trusted package code plus inert validated JSON; untrusted JavaScript is never accepted through a spec.
 
 Inline CSS and script bytes are pinned with SHA-256 in a meta Content Security Policy. External resource loading is denied. Document text is escaped; embedded JSON escapes `<` and Unicode line separators. Export downloads use Blob URLs. There is no server request on parameter changes.
+
+Model definitions, controls, assumptions and references are deeply frozen. They are exposed for inspection but cannot be changed by callers to weaken numeric bounds. Browser/CLI exports share canonical spec serialization and one provenance envelope; source fingerprints and spec fingerprints remain separate from the document's CSP hashes.
 
 SIR has a bounded number of RK4 steps; all models cap inputs, iterations and exported rows. These bounds protect interactivity and encode teaching scope. They are not necessarily natural physical limits.
 

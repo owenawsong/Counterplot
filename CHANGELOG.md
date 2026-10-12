@@ -8,3 +8,4 @@
 - CSV, provenance JSON, chart SVG and print/PDF exports.
 - Agent skill, schema, documented equations and numerical/integration checks.
 - MIT source and a static demonstration gallery.
+- Deeply immutable model definitions, explicit no-transition RC timing, and matching browser/CLI provenance with canonical spec and actual engine-source SHA-256 fingerprints.

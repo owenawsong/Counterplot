@@ -4,8 +4,18 @@ import { createServer } from 'node:http';
 import { resolve, dirname, relative, extname, sep, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash, randomBytes } from 'node:crypto';
-import { createSpec, validateSpec, evaluate, csv, MODELS, VERSION } from '../src/engine.js';
+import {
+  createSpec,
+  validateSpec,
+  evaluate,
+  csv,
+  MODELS,
+  VERSION,
+  canonicalJson,
+  resultEnvelope,
+} from '../src/engine.js';
 import { renderExperiment } from '../src/render.js';
+import { ENGINE_SHA256 } from '../src/source.js';
 
 export const HELP = `Counterplot ${VERSION} · portable, computed experiments
 
@@ -88,14 +98,9 @@ const out = (flags) => {
   return flags.out;
 };
 export function resultDocument(spec) {
-  return {
-    format: 'counterplot-results',
-    formatVersion: 1,
-    engineVersion: VERSION,
-    specSha256: createHash('sha256').update(JSON.stringify(spec)).digest('hex'),
-    spec,
-    results: evaluate(spec),
-  };
+  const clean = validateSpec(spec);
+  const specSha256 = createHash('sha256').update(canonicalJson(clean)).digest('hex');
+  return resultEnvelope(clean, ENGINE_SHA256, specSha256);
 }
 export async function serve(directory, port = 18872) {
   if (!Number.isInteger(port) || port < 1024 || port > 65535)

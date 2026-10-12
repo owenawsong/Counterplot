@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { validateSpec, evaluate, VERSION } from './engine.js';
+import { ENGINE_SHA256 } from './source.js';
 
 export const escapeHtml = (value) =>
   String(value).replace(
@@ -28,7 +29,7 @@ export async function renderExperiment(spec, { gallery = false } = {}) {
     readFile(new URL('../web/app.js', import.meta.url), 'utf8'),
   ]);
   const bundledEngine = engine.replace(/^export /gm, '');
-  const script = `'use strict';\nconst INITIAL_SPEC=${scriptJson(clean)};\n${bundledEngine}\n${app}`;
+  const script = `'use strict';\nconst INITIAL_SPEC=${scriptJson(clean)};\nconst ENGINE_SHA256=${scriptJson(ENGINE_SHA256)};\n${bundledEngine}\n${app}`;
   const body = `<a class="skip" href="#main">Skip to experiment</a><header class="masthead"><a class="brand" href="${gallery ? 'index.html' : 'https://github.com/owenawsong/Counterplot'}">${mark}counterplot</a><nav>${gallery ? '<a href="index.html">All experiments</a>' : ''}<small>WORKING NOTES / ${VERSION}</small><a href="https://github.com/owenawsong/Counterplot">Source ↗</a></nav></header><main id="main"><div id="app"></div><noscript><h1>${escapeHtml(clean.title)}</h1><p>JavaScript is required for interactive calculations. Use the CLI export command for results without a browser.</p></noscript></main><footer class="footer"><span>Counterplot · numerical engine ${VERSION} · MIT</span><span>One file. Actual calculations. No external requests.</span></footer>`;
   return document(clean.title, body, css, script);
 }

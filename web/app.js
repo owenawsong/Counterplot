@@ -236,6 +236,21 @@ function download(name, content, type) {
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 3000);
 }
+async function browserResultDocument(effectiveParameters = params) {
+  const clean = validateSpec({ ...spec, parameters: { ...effectiveParameters } });
+  if (!globalThis.crypto?.subtle)
+    throw new Error(
+      'Verified JSON export requires Web Crypto in a secure context. Open the standalone file or serve it on localhost.',
+    );
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(canonicalJson(clean)),
+  );
+  const specSha256 = Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, '0'),
+  ).join('');
+  return resultEnvelope(clean, ENGINE_SHA256, specSha256);
+}
 function bind() {
   Object.keys(MODELS[spec.model].controls).forEach((key) => {
     $('n-' + key).addEventListener('change', (e) =>
@@ -306,16 +321,24 @@ function bind() {
   };
   $('csv').onclick = () =>
     download(`counterplot-${spec.model}.csv`, csv(result), 'text/csv;charset=utf-8');
-  $('json').onclick = () =>
-    download(
-      `counterplot-${spec.model}-results.json`,
-      JSON.stringify(
-        { spec: { ...spec, parameters: params }, baseline, results: result },
-        null,
-        2,
-      ) + '\n',
-      'application/json',
-    );
+  $('json').onclick = async () => {
+    const button = $('json');
+    button.disabled = true;
+    try {
+      const envelope = await browserResultDocument();
+      if (baseline) envelope.baseline = await browserResultDocument(baseline);
+      download(
+        `counterplot-${spec.model}-results.json`,
+        JSON.stringify(envelope, null, 2) + '\n',
+        'application/json',
+      );
+      status('Verified results downloaded with spec and engine fingerprints.');
+    } catch (error) {
+      status(error.message);
+    } finally {
+      button.disabled = false;
+    }
+  };
   $('save-spec').onclick = () =>
     download(
       `counterplot-${spec.model}.json`,

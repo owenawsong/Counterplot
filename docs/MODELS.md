@@ -34,7 +34,7 @@ Input resistance in kΩ is multiplied by 1000; capacitance in µF is multiplied 
 
 `V(t) = Vs + (V0 − Vs)exp(−t/τ)`. Current is defined from source toward capacitor: `I(t) = (Vs − V(t))/R`. CSV current is in mA. Initial voltage can exceed supply, so negative current and a decreasing voltage are valid.
 
-The curve contains 201 evenly spaced samples over the selected number of time constants. The “90%” metric is 90% of the transition from V0 toward Vs, not necessarily 90% of the supply. When V0 equals Vs there is no transition; the characteristic time constant remains a property of the RC network.
+The curve contains 201 evenly spaced samples over the selected number of time constants. The “90%” metric is 90% of the transition from V0 toward Vs, not necessarily 90% of the supply. When V0 equals Vs there is no transition, the timing is `null`/Undefined, and the explanations do not claim a completed fraction. The characteristic time constant still remains a property of the RC network.
 
 Changing R or C changes the actual time axis. With a fixed observation window in time constants, the final fraction reached is unchanged. Baseline overlays use their own actual seconds on a shared axis.
 

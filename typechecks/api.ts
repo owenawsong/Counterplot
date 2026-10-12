@@ -1,7 +1,9 @@
-import { createSpec, evaluate, validateSpec, type Experiment } from '../src/engine.js';
+import { createSpec, evaluate, validateSpec, MODELS, type Experiment } from '../src/engine.js';
 import { renderExperiment } from '../src/render.js';
 function typeChecksOnly() {
   const loan = createSpec('loan');
+  // @ts-expect-error Numerical constraints are deeply readonly.
+  MODELS.bayes.controls.prevalence.min = -10;
   const result = evaluate(loan, { extra: 200 });
   result.parameters.principal.toFixed(2);
   renderExperiment(loan);

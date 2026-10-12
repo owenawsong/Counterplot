@@ -21,10 +21,12 @@ Specs are limited to 100 KB by the CLI reader and browser editor. JSON has no co
 
 The pure engine returns version, model, effective parameters, metrics, primary chart series, optional secondary chart, table columns/rows, computed explanatory paragraphs and warnings. Undefined metric values are null. Chart x/y units appear in axis labels. Results are not accepted as inputs to the spec validator.
 
-CLI result documents additionally wrap the validated spec, SHA-256 of `JSON.stringify(validatedSpec)`, and format version. The hash identifies this serialization; it is not a semantic canonical JSON hash. Browser result downloads contain effective inputs, pinned baseline and results without a hash. Browser “Save experiment” produces an ordinary valid spec with current inputs as defaults.
+CLI and browser result documents use the same envelope: format identifier/version, engine version, `engineSha256`, `specSha256`, validated spec and computed results. The spec fingerprint uses UTF-8 canonical JSON with recursively sorted object keys, preserved array order, and ordinary JSON number serialization. Optional undefined object values are omitted. The engine fingerprint is SHA-256 of the actual `src/engine.js` source with CRLF/CR normalized to LF; the HTML builder embeds that exact fingerprint alongside the bundled engine. Fingerprints identify data and code, not authorship or correctness. Browser hashing uses Web Crypto, available on localhost, HTTPS and supported local-file browser contexts. If unavailable, the JSON exporter reports an error instead of omitting provenance.
+
+A browser download with a pinned baseline additionally contains `baseline`, a complete provenance envelope for those initial inputs. Without a baseline the browser and CLI produce identical envelopes for the same effective spec and engine. Browser “Save experiment” produces an ordinary valid spec with current inputs as defaults.
 
 ## A saved baseline
 
-Pinning records inputs for the current model. It is an in-memory comparison and is lost on refresh. Reset restores initial inputs and preserves the pinned baseline. Applying a different spec clears it. Saved spec files do not include a baseline. Full result downloads include the baseline parameters for audit.
+Pinning records inputs for the current model. It is an in-memory comparison and is lost on refresh. Reset restores initial inputs and preserves the pinned baseline. Applying a different spec clears it. Saved spec files do not include a baseline. Full result downloads include the baseline envelope for audit.
 
 Comparison deltas are descriptive. If multiple inputs changed, a delta cannot isolate one cause. “Undefined” is not a number and produces no numerical delta.

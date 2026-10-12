@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, writeFile, mkdir, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createHash } from 'node:crypto';
+import { createHash, webcrypto } from 'node:crypto';
+import { runInNewContext } from 'node:vm';
 import { spawnSync } from 'node:child_process';
 import { request } from 'node:http';
 import { fileURLToPath } from 'node:url';
@@ -31,6 +32,40 @@ test('portable output is deterministic, escaped and hash-protected by CSP', asyn
   assert.ok(html.includes(createHash('sha256').update(script).digest('base64')));
   assert.ok(html.includes(createHash('sha256').update(style).digest('base64')));
   assert.doesNotThrow(() => new Function(script)); // Parse generated, trusted source without executing DOM code.
+});
+test('browser Web Crypto and CLI produce identical provenance envelopes', async () => {
+  const spec = createSpec('circuit'),
+    html = await renderExperiment(spec);
+  const script = html.match(/<script>([\s\S]*)<\/script>/)[1];
+  const prefix = script.slice(0, script.indexOf('/* Bundled behind'));
+  const app = await readFile(new URL('../web/app.js', import.meta.url), 'utf8');
+  const helper = app.slice(
+    app.indexOf('async function browserResultDocument'),
+    app.indexOf('function bind'),
+  );
+  const browser = await runInNewContext(
+    'const structuredClone = value => JSON.parse(JSON.stringify(value));\n' +
+      prefix +
+      '\nconst spec=INITIAL_SPEC, params={...spec.parameters};\n' +
+      helper +
+      '\nbrowserResultDocument();',
+    { TextEncoder, crypto: webcrypto },
+  );
+  const cli = resultDocument(spec);
+  assert.deepEqual(JSON.parse(JSON.stringify(browser)), cli);
+  const engine = await readFile(new URL('../src/engine.js', import.meta.url), 'utf8');
+  assert.equal(
+    cli.engineSha256,
+    createHash('sha256').update(engine.replace(/\r\n?/g, '\n')).digest('hex'),
+  );
+  const reordered = {
+    parameters: spec.parameters,
+    description: spec.description,
+    title: spec.title,
+    model: spec.model,
+    schemaVersion: 1,
+  };
+  assert.equal(resultDocument(reordered).specSha256, cli.specSha256);
 });
 test('atomic writes refuse overwrite and input files have a size limit', async () => {
   const root = await mkdtemp(join(tmpdir(), 'counterplot-test-'));

@@ -85,7 +85,10 @@ export interface Result<M extends Model = Model> {
   warnings: string[];
 }
 export const VERSION: string;
-export const MODELS: Readonly<Record<Model, ModelDefinition>>;
+export type DeepReadonly<T> = T extends object
+  ? { readonly [P in keyof T]: DeepReadonly<T[P]> }
+  : T;
+export const MODELS: DeepReadonly<Record<Model, ModelDefinition>>;
 export class SpecError extends Error {
   issues: string[];
   constructor(issues: string[]);
@@ -98,3 +101,18 @@ export function evaluate<M extends Model>(
   overrides?: Partial<Parameters[M]>,
 ): Result<M>;
 export function csv(result: Pick<Result, 'columns' | 'rows'>): string;
+export function canonicalJson(value: unknown): string;
+export interface ResultEnvelope {
+  format: 'counterplot-results';
+  formatVersion: 1;
+  engineVersion: string;
+  engineSha256: string;
+  specSha256: string;
+  spec: Experiment;
+  results: Result;
+}
+export function resultEnvelope(
+  spec: Experiment,
+  engineSha256: string,
+  specSha256: string,
+): ResultEnvelope;

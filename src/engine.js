@@ -10,7 +10,13 @@ const control = (label, unit, min, max, step, value, help) => ({
   value,
   help,
 });
-export const MODELS = Object.freeze({
+function deepFreeze(value) {
+  for (const child of Object.values(value)) {
+    if (child !== null && typeof child === 'object') deepFreeze(child);
+  }
+  return Object.freeze(value);
+}
+export const MODELS = deepFreeze({
   descent: {
     label: 'Gradient descent',
     field: 'Machine learning',
@@ -561,7 +567,8 @@ const calculators = {
   circuit(p) {
     const R = p.resistance * 1000,
       C = p.capacitance * 1e-6,
-      tau = R * C;
+      tau = R * C,
+      equilibrium = p.initial === p.supply;
     const rows = Array.from({ length: 201 }, (_, i) => {
       const time = (i / 200) * p.duration * tau,
         voltage = p.supply + (p.initial - p.supply) * Math.exp(-time / tau);
@@ -570,7 +577,7 @@ const calculators = {
     return {
       metrics: [
         metric('Time constant', tau, 'seconds', 4),
-        metric('90% of transition', Math.log(10) * tau, 'seconds', 4),
+        metric('90% of transition', equilibrium ? null : Math.log(10) * tau, 'seconds', 4),
         metric('Final voltage', rows.at(-1).voltage, 'V', 4),
       ],
       chart: {
@@ -588,11 +595,15 @@ const calculators = {
       insights: [
         {
           label: 'One time constant',
-          text: `After ${fmt(tau, 4)} seconds the capacitor has completed about 63.2% of its voltage transition.`,
+          text: equilibrium
+            ? `The RC time constant is ${fmt(tau, 4)} s, but the capacitor is already at equilibrium. There is no voltage transition.`
+            : `At t = ${fmt(tau, 4)} s the capacitor has completed about 63.2% of its voltage transition.`,
         },
         {
-          label: 'Not quite finished',
-          text: `At ${fmt(p.duration)}τ the transition is ${(100 * (1 - Math.exp(-p.duration))).toFixed(2)}% complete. The ideal exponential reaches its target asymptotically.`,
+          label: equilibrium ? 'Already at equilibrium' : 'Not quite finished',
+          text: equilibrium
+            ? 'A percentage of a zero-size transition is undefined. The 90%-transition timing is therefore undefined; voltage stays at the supply and current stays zero.'
+            : `At ${fmt(p.duration)}τ the transition is ${(100 * (1 - Math.exp(-p.duration))).toFixed(2)}% complete. The ideal exponential reaches its target asymptotically.`,
         },
         {
           label: 'Direction matters',
@@ -760,4 +771,46 @@ export function csv(result) {
       .map((row) => row.map(escape).join(','))
       .join('\r\n') + '\r\n'
   );
+}
+
+/** Canonical JSON for provenance: recursively sorted keys, unchanged array order and numbers. */
+export function canonicalJson(value) {
+  if (Array.isArray(value)) return '[' + value.map(canonicalJson).join(',') + ']';
+  if (value !== null && typeof value === 'object') {
+    return (
+      '{' +
+      Object.keys(value)
+        .filter((key) => value[key] !== undefined)
+        .sort()
+        .map((key) => JSON.stringify(key) + ':' + canonicalJson(value[key]))
+        .join(',') +
+      '}'
+    );
+  }
+  const encoded = JSON.stringify(value);
+  if (encoded === undefined || (typeof value === 'number' && !Number.isFinite(value))) {
+    throw new TypeError('Provenance requires JSON values with finite numbers.');
+  }
+  return encoded;
+}
+
+/** Shared envelope for CLI and browser exports. Hashes identify data and source, not authorship. */
+export function resultEnvelope(spec, engineSha256, specSha256) {
+  if (
+    ![engineSha256, specSha256].every(
+      (hash) => typeof hash === 'string' && /^[a-f0-9]{64}$/.test(hash),
+    )
+  ) {
+    throw new TypeError('Provenance hashes must be lowercase SHA-256 hexadecimal strings.');
+  }
+  const clean = validateSpec(spec);
+  return {
+    format: 'counterplot-results',
+    formatVersion: 1,
+    engineVersion: VERSION,
+    engineSha256,
+    specSha256,
+    spec: clean,
+    results: evaluate(clean),
+  };
 }
