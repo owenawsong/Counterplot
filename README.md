@@ -91,7 +91,7 @@ node bin/counterplot.js export examples/circuit.json --format json --out circuit
 node bin/counterplot.js compare before.json after.json --out comparison.json
 ```
 
-Result JSON includes the engine version, normalized engine-source SHA-256, exact spec, canonical spec SHA-256 and computed rows. Browser and CLI use identical provenance envelopes; a pinned baseline adds its own envelope. Builds are deterministic for the same spec and engine source. `compare` requires the same model family; it does not assert that a changed scenario is a controlled causal experiment.
+Result JSON includes the engine version, normalized engine-source SHA-256, exact spec, canonical spec SHA-256 and computed rows. Browser and CLI share the same provenance schema and fingerprints; a pinned baseline adds its own envelope. Raw numerical rows can vary at the last floating-point digits across JavaScript runtimes. Builds are deterministic for the same spec and engine source. `compare` requires the same model family; it does not assert that a changed scenario is a controlled causal experiment.
 
 Use the engine directly in Node or an existing frontend:
 

@@ -1,6 +1,6 @@
 # Equations, numerical checks and limitations
 
-All calculations use JavaScript IEEE-754 double precision. Parameters have fixed units and documented bounds. The engine is deterministic; numerical tolerances acknowledge finite precision. There is no stochastic sampling, external data, trained model or LLM involved in evaluation.
+All calculations use JavaScript IEEE-754 double precision. Parameters have fixed units and documented bounds. The engine is deterministic within a runtime; numerical tolerances acknowledge finite precision. Transcendental functions such as `Math.exp` may differ at the last binary digits across runtimes, even with matching source/spec fingerprints. Raw rows preserve those values. There is no stochastic sampling, external data, trained model or LLM involved in evaluation.
 
 ## Quadratic gradient descent
 
