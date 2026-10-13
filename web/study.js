@@ -539,6 +539,7 @@ function renderDataset() {
 }
 async function saveInteractiveHtml() {
   const button = $('save-html');
+  const fileName = 'counterplot-' + spec.model + '-interactive.html';
   button.disabled = true;
   try {
     const clone = document.documentElement.cloneNode(true),
@@ -567,11 +568,12 @@ async function saveInteractiveHtml() {
       "script-src 'sha256-" + encoded + "'",
     );
     clone.querySelectorAll('dialog[open]').forEach((d) => d.removeAttribute('open'));
-    download(
-      'counterplot-' + spec.model + '-interactive.html',
-      '<!doctype html>\n' + clone.outerHTML,
-      'text/html',
-    );
+    for (const link of clone.querySelectorAll('.masthead a[href="index.html"]')) {
+      if (link.classList.contains('brand'))
+        link.setAttribute('href', 'https://github.com/owenawsong/Counterplot');
+      else link.remove();
+    }
+    download(fileName, '<!doctype html>\n' + clone.outerHTML, 'text/html');
     status('Saved a standalone interactive file with your current inputs and pinned baseline.');
   } catch (e) {
     status('Could not save interactive file: ' + e.message);

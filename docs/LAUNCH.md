@@ -12,6 +12,8 @@ Node 20+ to build, zero runtime dependencies, MIT. Six supported model families,
 
 https://github.com/owenawsong/Counterplot
 
+Try it: https://owenawsong.github.io/Counterplot/
+
 ## Developer post
 
 **Counterplot: interactive numerical studies in one portable HTML file**
@@ -25,6 +27,8 @@ The example I like most is gradient descent: scan learning rate against curvatur
 v0.2.0 has six bounded model families and 42 tests. Its bundled classifier scores are authored teaching data. Grid search is explicitly sampled—not a global-optimization claim—and the model assumptions stay beside each experiment.
 
 Source and quickstart: https://github.com/owenawsong/Counterplot
+
+Try it: https://owenawsong.github.io/Counterplot/
 
 Feedback I would find useful: what calculation do you currently explain with a static chart that readers should be able to investigate themselves?
 

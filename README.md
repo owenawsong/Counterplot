@@ -10,7 +10,7 @@ Run a grid of learning rates and curvatures. Inspect a classifier's missed posit
 
 **Node 20+ to build · zero runtime dependencies · local processing · MIT**
 
-[Quickstart](#open-your-first-experiment) · [Numerical methods](docs/MODELS.md) · [Study API](docs/ANALYSIS.md) · [Agent skill](skills/counterplot/SKILL.md)
+[Try the live gallery](https://owenawsong.github.io/Counterplot/) · [Quickstart](#open-your-first-experiment) · [Numerical methods](docs/MODELS.md) · [Study API](docs/ANALYSIS.md) · [Agent skill](skills/counterplot/SKILL.md)
 
 ## Open your first experiment
 
