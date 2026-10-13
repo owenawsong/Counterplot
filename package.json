@@ -1,7 +1,7 @@
 {
   "name": "counterplot",
   "version": "0.2.0",
-  "description": "Build portable interactive experiments from bounded, tested numerical models.",
+  "description": "Local parameter studies and classifier evaluation, exported as one interactive HTML file.",
   "type": "module",
   "bin": {
     "counterplot": "./bin/counterplot.js"
@@ -53,12 +53,16 @@
     "url": "https://github.com/owenawsong/Counterplot.git"
   },
   "keywords": [
-    "interactive-explanations",
-    "simulation",
-    "agents",
+    "parameter-study",
+    "sensitivity-analysis",
+    "classification",
+    "roc",
+    "precision-recall",
     "visualization",
-    "education",
-    "numerical-models"
+    "offline",
+    "interactive-explanations",
+    "numerical-models",
+    "agents"
   ],
   "publishConfig": {
     "access": "public"

@@ -1,30 +1,44 @@
-# Release checklist
+# Releasing Counterplot v0.2.0
 
-## Local gates
+## Verify the source and package
 
-- [ ] `npm test`: analytical checks, invariants, input errors, CLI and server boundaries pass.
-- [ ] `npm ci --ignore-scripts` and `npm run typecheck`: model-specific declarations accept valid inputs and reject incorrect parameter names.
-- [ ] `npm run build`: six examples, schema and gallery are generated.
-- [ ] `npm run check`: packaged sources, schema parity, document safety and link/artifact checks pass.
-- [ ] `npm pack`: package has no local logs, credentials, dependencies or build clutter.
-- [ ] Install the tarball in an empty directory; run its CLI and HTML renderer.
-- [ ] Open a standalone file without the local server. Change controls and export values.
-- [ ] Run browser/CLI parameter studies and local sensitivity; verify invalid/undefined points and frozen inputs.
-- [ ] Import valid/invalid labeled-score CSV; verify threshold counts and ranking curves.
-- [ ] Save current inputs plus a baseline as interactive HTML and run its worker from the file.
-- [ ] Browser QA: desktop/mobile, baseline, scenarios, invalid edit, null probability, playback and reduced motion.
-- [ ] Numerical and prose changes are reflected in model docs and changelog.
+```bash
+npm ci --ignore-scripts
+npm test
+npm run typecheck
+npm run build
+npm run check
+npm pack
+```
 
-## Publishing
+- [ ] The 42-test suite, TypeScript checks and release checks pass on the release commit.
+- [ ] CI completes on Linux/Windows and Node 20/24.
+- [ ] The package contains the engine, analysis module, worker/UI templates, examples, types and documentation. It contains no local logs, credentials or unneeded build files.
+- [ ] Install the tarball in an empty directory and use its CLI to build an HTML file.
+- [ ] The generated schema agrees with the engine, and README/local documentation links resolve.
 
-1. Push reviewed source to the intended repository. Keep private visibility until the owner approves publication.
-2. Let CI complete on Windows/Linux and Node 20/24.
-3. Enable GitHub Pages with GitHub Actions and manually dispatch the Pages workflow if a public gallery is desired. Workflow permissions do not automatically change repository visibility.
-4. Create a `v0.2.0` release with the npm tarball and generated gallery archive. npm publication is optional and is not assumed by the README.
-5. Record the deployed gallery URL only after checking it. Do not advertise an unavailable URL.
+## Check the actual user experience
 
-## Launch copy
+- [ ] Run the README quickstart from a fresh checkout.
+- [ ] Open an exported HTML file directly. Change inputs, pin a baseline and export results.
+- [ ] Run one- and two-parameter studies in the browser; inspect selected points and the captured fixed inputs.
+- [ ] Apply a study point and verify it restores that study's inputs with the chosen coordinates.
+- [ ] Verify undefined and invalid points, plus warnings for a best sampled point and undefined-baseline sensitivity.
+- [ ] Import a valid numeric `label,score` CSV. Reject malformed/oversized data; identify the bundled dataset as an authored fixture.
+- [ ] Verify grouped ROC/PR geometry, threshold counts and undefined denominators.
+- [ ] Save current inputs and a pinned baseline as HTML; reopen it and run the embedded worker.
+- [ ] Check mobile layout, keyboard study navigation, reduced motion and cancel/restart behavior.
+- [ ] Compare browser/CLI input and source fingerprints. Allow documented floating-point differences in raw numerical results.
 
-“Counterplot turns a small JSON spec into an interactive explanation you can send as one HTML file. Change a learning rate, loan payment, circuit parameter, intervention, test assumption or classification threshold; compare a baseline and inspect the calculation. Six tested model families, no API key, no external runtime requests, MIT.”
+## Publish and check the links
 
-Show the same gradient-descent starting point at a stable rate, the boundary and a divergent rate. Then show the numerical table and saved standalone document. Say which model and assumptions are being demonstrated. Avoid claims of scientific audit, universal simulation coverage or measured agent productivity without evidence.
+Release target: `owenawsong/Counterplot`. Verify the release commit and artifacts before publishing.
+
+1. Push the reviewed release commit and confirm its CI results.
+2. Confirm the repository is publicly accessible and check it without an authenticated account.
+3. Create a `v0.2.0` release containing the npm tarball and generated gallery archive. npm registry publication is optional; the README uses a source checkout.
+4. If publishing a gallery, enable GitHub Pages with GitHub Actions and manually dispatch the included workflow. Check the deployed examples, studies and exports before adding its URL to documentation.
+5. Check the public README image, quickstart, license and methods links.
+6. Use [the launch drafts](LAUNCH.md) for the maintainer's announcement. Publish external posts only with explicit authorization for that destination.
+
+The launch should describe an inspectable toolkit with six supported model families. Its tests do not establish independent scientific validation, real-world forecast accuracy or increased agent productivity.
